@@ -14,3 +14,6 @@ mise.local.toml
 
 # Site scan output: contains the developer's site names, paths and DLL names
 /.scan/
+
+# Language server published into the extension by `mise run server:build`
+/extension/server/

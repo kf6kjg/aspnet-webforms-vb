@@ -43,8 +43,9 @@ file-template extension.
    - App_Code is one compilation. Each page or control is its own compilation, against
      App_Code and the user controls it registers.
    - references from `Bin/*.dll`, `web.config` `<assemblies>`, .NET Framework 4.6.1
-     reference assemblies (including `System.Web`), and NuGet stand-ins for GAC-only
-     assemblies (`MySql.Data`)
+     reference assemblies (including `System.Web`), and user-supplied copies of
+     assemblies the server loads from its GAC, such as `MySql.Data`
+     ([ADR 0007](docs/adr/0007-runtime-via-dotnet-install-tool-and-user-supplied-gac-assemblies.md))
    - for each page, control, and master page, the `runat="server"` controls are read
      from the markup and declared in a virtual partial class (`asp:TextBox` →
      `WebControls.TextBox`, `<td runat="server">` → `HtmlControls.HtmlTableCell`;
@@ -58,8 +59,8 @@ file-template extension.
 
 | Path | Contents |
 | --- | --- |
-| [extension/](extension) | VS Code extension: grammar, snippets, navigation (stages 1-2) |
-| [server/](server) | Language server (not started) |
+| [extension/](extension) | VS Code extension: grammar, snippets, navigation, language client (stages 1-3) |
+| [server/](server) | Language server: Roslyn workspace over LSP (stage 3) |
 | [spike/](spike) | Throwaway feasibility console app |
 | [samples/](samples) | A tiny fake Web Site project to test against |
 | [scripts/](scripts) | Repo scripts (.NET file-based apps), run through mise tasks |
@@ -96,22 +97,37 @@ file-template extension.
   design and backup copies whose user controls weren't copied with them, one page with
   unregistered `uc1:` tags, and one page with `Handles` on controls that don't exist)
   plus a C# sample.
-- [ ] Stage 3: App_Code + per-page compilations
-- [ ] Stage 3: references from `Bin/*.dll`, `web.config` `<assemblies>`, Framework reference assemblies, NuGet `MySql.Data`
-- [ ] Stage 3: virtual partial classes generated from markup (WebControls, HtmlControls, `@Register` user controls)
-- [ ] Stage 3: language server wired into the extension: completion, diagnostics, go to definition
+- [x] Stage 3: App_Code + per-page compilations, page projects created on first use
+- [x] Stage 3: references from `Bin/*.dll`, `web.config` `<assemblies>`, .NET 4.6.1 reference assemblies, and user-supplied GAC assemblies (`aspxVb.assemblyFolders`, with instructions shown when one is missing)
+- [x] Stage 3: virtual partial classes generated from markup (WebControls, HtmlControls, `@Register` user controls)
+- [x] Stage 3: web-service proxies generated from `App_WebReferences/*.wsdl` (found by compiling the real sites)
+- [x] Stage 3: language server wired into the extension: completion, diagnostics, go to definition, hover
+  ([ADR 0006](docs/adr/0006-language-server-implementation.md))
+- Stage 3 against the real sites (`mise run server:check`): 22 sites and 1,628 markup files
+  compile. Every error reported on a live page is a real bug in that page (undeclared
+  variables, `Handles` on controls that no longer exist, unfinished statements). Opening a
+  page in the largest site: first diagnostics in about 2 s on a cold server, completion
+  in about 35 ms once warm.
 
 ## Known limitations and open questions
 
-- Language features (diagnostics, completion) are planned for `.vb` code-behind only.
-  VB inside `<% %>` blocks will get syntax highlighting, nothing more.
+- Language features (completion, diagnostics, definition, hover) cover `.vb` files:
+  code-behind and App_Code. VB inside `<% %>` blocks gets syntax highlighting, nothing
+  more.
+- Not handled yet: `Global.asax` code-behind, `Profile` properties, master-page
+  `@MasterType`, and signature help (parameter info while typing a call).
+- The language server runs on a .NET 10+ runtime that the .NET Install Tool extension
+  finds or downloads; the first start needs network access if none is installed. The
+  `.vsix` is about 29 MB, mostly the .NET Framework reference assemblies
+  ([ADR 0007](docs/adr/0007-runtime-via-dotnet-install-tool-and-user-supplied-gac-assemblies.md)).
 - The VB 11 language ceiling is believed to be the limit of the in-box .NET 4.x
   compiler, but hasn't been checked on his server (see ADR 0004).
 - Highlighting of VB inside `<% %>` is only as good as VS Code's built-in VB grammar,
-  which is simple. The language server will improve how `.vb` files work, but not this
-  highlighting.
-- `MySql.Data` comes from NuGet, not from the exact DLL in the server's GAC. Small API
-  differences are possible.
+  which is simple. The language server doesn't change highlighting.
+- Assemblies the web server loads from its GAC (today `MySql.Data`, used by 10 of the
+  sites) aren't shipped. Until a copy is placed in a folder listed in
+  `aspxVb.assemblyFolders`, code using them shows errors, and the extension says how to
+  fix it ([extension/MISSING-ASSEMBLIES.md](extension/MISSING-ASSEMBLIES.md)).
 
 ## Development
 
@@ -126,7 +142,9 @@ mise run scan                # read-only scan of the real sites -> .scan/ (gitig
 mise run ext:install-deps    # once: extension npm dev dependencies
 mise run ext:test            # grammar tests + manifest check
 mise run ext:smoke           # grammar + navigation over every real site under $SITES_ROOT
-mise run ext:package         # build extension/dist/*.vsix
+mise run ext:package         # build extension/dist/*.vsix (publishes the server first)
+mise run server:test         # language server unit + end-to-end tests
+mise run server:check        # compile every page of every real site under $SITES_ROOT
 ```
 
 `mise run scan` needs `SITES_ROOT` (and usually `SITES_DRIVE_MAP` and `SCAN_EXCLUDE`)

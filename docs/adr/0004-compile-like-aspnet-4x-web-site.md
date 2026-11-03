@@ -1,6 +1,6 @@
 # 0004. Compile the way ASP.NET 4.x compiles a Web Site
 
-Date: 2026-11-02 · Status: Accepted
+Date: 2026-11-02 · Status: Accepted (the NuGet `MySql.Data` stand-in is superseded by [0007](0007-runtime-via-dotnet-install-tool-and-user-supplied-gac-assemblies.md))
 
 ## Context
 

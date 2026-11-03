@@ -23,14 +23,27 @@ dir = "extension"
 run = "npm install"
 
 [tasks."ext:test"]
-description = "Run the extension's grammar tests"
+description = "Run the extension tests (navigation and diagnostics unit tests, grammar tests, manifest check)"
 dir = "extension"
 run = "npm test"
 
 [tasks."ext:package"]
-description = "Build the extension .vsix into extension/dist/"
+description = "Build the extension .vsix (including the language server) into extension/dist/"
+depends = ["server:build"]
 dir = "extension"
 run = "npm run package"
+
+[tasks."server:build"]
+description = "Publish the language server (portable .dll; the extension gets a .NET runtime from the .NET Install Tool) into extension/server/"
+run = "rm -rf extension/server && dotnet publish server/AspxVb.Server -c Release -p:UseAppHost=false -o extension/server"
+
+[tasks."server:test"]
+description = "Run the language server tests (against samples/)"
+run = "dotnet test server/AspxVb.Server.Tests"
+
+[tasks."server:check"]
+description = "Compile every page of every site under $SITES_ROOT (read-only) and summarize diagnostics"
+run = "dotnet run --project server/AspxVb.Server -c Release -- --check \"$SITES_ROOT\""
 
 [tasks."ext:smoke"]
 description = "Run grammar and navigation over every real site under $SITES_ROOT (read-only) and report breakage"

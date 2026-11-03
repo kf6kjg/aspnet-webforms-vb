@@ -1,7 +1,7 @@
 test/**
-node_modules/**
-dist/**
-**/*.map
 src/**
 out/test/**
+dist/**
+**/*.map
+**/*.pdb
 tsconfig.json

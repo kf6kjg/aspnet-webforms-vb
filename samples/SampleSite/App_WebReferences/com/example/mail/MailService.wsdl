@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wsdl:definitions xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="http://example.com/mail" xmlns:s="http://www.w3.org/2001/XMLSchema" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" targetNamespace="http://example.com/mail">
+  <wsdl:types>
+    <s:schema elementFormDefault="qualified" targetNamespace="http://example.com/mail">
+      <s:element name="SendMail">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="toAddress" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="subject" type="s:string" />
+            <s:element minOccurs="1" maxOccurs="1" name="priority" type="tns:Priority" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="SendMailResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="1" maxOccurs="1" name="SendMailResult" type="s:boolean" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="GetOutbox">
+        <s:complexType />
+      </s:element>
+      <s:element name="GetOutboxResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetOutboxResult" type="tns:ArrayOfMessage" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="GetReport">
+        <s:complexType />
+      </s:element>
+      <s:element name="GetReportResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetReportResult">
+              <s:complexType>
+                <s:sequence>
+                  <s:element ref="s:schema" />
+                  <s:any />
+                </s:sequence>
+              </s:complexType>
+            </s:element>
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="ArrayOfMessage">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="Message" nillable="true" type="tns:Message" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="Message">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="To" type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="Queued" type="s:dateTime" />
+        </s:sequence>
+      </s:complexType>
+      <s:simpleType name="Priority">
+        <s:restriction base="s:string">
+          <s:enumeration value="Low" />
+          <s:enumeration value="Normal" />
+          <s:enumeration value="High" />
+        </s:restriction>
+      </s:simpleType>
+    </s:schema>
+  </wsdl:types>
+  <wsdl:message name="SendMailSoapIn"><wsdl:part name="parameters" element="tns:SendMail" /></wsdl:message>
+  <wsdl:message name="SendMailSoapOut"><wsdl:part name="parameters" element="tns:SendMailResponse" /></wsdl:message>
+  <wsdl:message name="GetOutboxSoapIn"><wsdl:part name="parameters" element="tns:GetOutbox" /></wsdl:message>
+  <wsdl:message name="GetOutboxSoapOut"><wsdl:part name="parameters" element="tns:GetOutboxResponse" /></wsdl:message>
+  <wsdl:message name="GetReportSoapIn"><wsdl:part name="parameters" element="tns:GetReport" /></wsdl:message>
+  <wsdl:message name="GetReportSoapOut"><wsdl:part name="parameters" element="tns:GetReportResponse" /></wsdl:message>
+  <wsdl:portType name="MailServiceSoap">
+    <wsdl:operation name="SendMail"><wsdl:input message="tns:SendMailSoapIn" /><wsdl:output message="tns:SendMailSoapOut" /></wsdl:operation>
+    <wsdl:operation name="GetOutbox"><wsdl:input message="tns:GetOutboxSoapIn" /><wsdl:output message="tns:GetOutboxSoapOut" /></wsdl:operation>
+    <wsdl:operation name="GetReport"><wsdl:input message="tns:GetReportSoapIn" /><wsdl:output message="tns:GetReportSoapOut" /></wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="MailServiceSoap" type="tns:MailServiceSoap">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="SendMail"><soap:operation soapAction="http://example.com/mail/SendMail" style="document" /><wsdl:input><soap:body use="literal" /></wsdl:input><wsdl:output><soap:body use="literal" /></wsdl:output></wsdl:operation>
+    <wsdl:operation name="GetOutbox"><soap:operation soapAction="http://example.com/mail/GetOutbox" style="document" /><wsdl:input><soap:body use="literal" /></wsdl:input><wsdl:output><soap:body use="literal" /></wsdl:output></wsdl:operation>
+    <wsdl:operation name="GetReport"><soap:operation soapAction="http://example.com/mail/GetReport" style="document" /><wsdl:input><soap:body use="literal" /></wsdl:input><wsdl:output><soap:body use="literal" /></wsdl:output></wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="MailService">
+    <wsdl:port name="MailServiceSoap" binding="tns:MailServiceSoap"><soap:address location="http://example.com/mail/MailService.asmx" /></wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>
