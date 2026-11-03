@@ -1,0 +1,130 @@
+{
+  "Page directive": {
+    "prefix": "page",
+    "description": "@Page directive for a Web Site page with a VB code-behind (CodeFile)",
+    "body": "<%@ Page Language=\"VB\" AutoEventWireup=\"false\" CodeFile=\"${TM_FILENAME}.vb\" Inherits=\"${1:${TM_FILENAME_BASE}}\" %>$0"
+  },
+  "Control directive": {
+    "prefix": "control",
+    "description": "@Control directive for a user control with a VB code-behind (CodeFile)",
+    "body": "<%@ Control Language=\"VB\" AutoEventWireup=\"false\" CodeFile=\"${TM_FILENAME}.vb\" Inherits=\"${1:${TM_FILENAME_BASE}}\" %>$0"
+  },
+  "Register user control": {
+    "prefix": "register",
+    "description": "@Register a user control by site-rooted path",
+    "body": "<%@ Register TagPrefix=\"uc1\" TagName=\"${1:Header}\" Src=\"~/${2:$1}.ascx\" %>$0"
+  },
+  "User control tag": {
+    "prefix": "uc1",
+    "description": "Registered user control instance",
+    "body": "<uc1:${1:Header} id=\"${2:${1}1}\" runat=\"server\"></uc1:${1}>$0"
+  },
+  "Data item": {
+    "prefix": "dataitem",
+    "description": "Data-binding expression for a field of the current row",
+    "body": "<%#Container.DataItem(\"${1:Field}\")%>$0"
+  },
+  "Output expression": {
+    "prefix": "expr",
+    "description": "Write a value into the page",
+    "body": "<%= ${1:value} %>$0"
+  },
+  "Code block": {
+    "prefix": "code",
+    "description": "Inline VB statements",
+    "body": "<% ${1} %>$0"
+  },
+  "asp:TextBox": {
+    "prefix": "asp:TextBox",
+    "body": "<asp:TextBox ID=\"${1:txtName}\" Columns=\"${2:30}\" MaxLength=\"${3:50}\" CssClass=\"${4:Field}\" runat=\"server\" />$0"
+  },
+  "asp:Button": {
+    "prefix": "asp:Button",
+    "body": "<asp:Button ID=\"${1:btnSave}\" Text=\"${2:Save}\" runat=\"server\" CssClass=\"${3:Button}\" />$0"
+  },
+  "asp:CheckBox": {
+    "prefix": "asp:CheckBox",
+    "body": "<asp:CheckBox ID=\"${1:chkActive}\" runat=\"server\" CssClass=\"${2:Field}\" />$0"
+  },
+  "asp:DropDownList": {
+    "prefix": "asp:DropDownList",
+    "body": [
+      "<asp:DropDownList ID=\"${1:ddlChoice}\" runat=\"server\" CssClass=\"${2:Field}\">",
+      "\t<asp:ListItem Value=\"${3:0}\">${4:Text}</asp:ListItem>",
+      "</asp:DropDownList>$0"
+    ]
+  },
+  "asp:RadioButtonList": {
+    "prefix": "asp:RadioButtonList",
+    "body": [
+      "<asp:RadioButtonList ID=\"${1:rblChoice}\" runat=\"server\" RepeatDirection=\"Horizontal\">",
+      "\t<asp:ListItem Value=\"${2:0}\">${3:Text}</asp:ListItem>",
+      "</asp:RadioButtonList>$0"
+    ]
+  },
+  "asp:HiddenField": {
+    "prefix": "asp:HiddenField",
+    "body": "<asp:HiddenField ID=\"${1:hfValue}\" runat=\"server\" />$0"
+  },
+  "asp:FileUpload": {
+    "prefix": "asp:FileUpload",
+    "body": "<asp:FileUpload ID=\"${1:fuFile}\" runat=\"server\" />$0"
+  },
+  "asp:ImageButton": {
+    "prefix": "asp:ImageButton",
+    "body": "<asp:ImageButton ID=\"${1:ibGo}\" ImageUrl=\"${2:~/Images/}\" runat=\"server\" />$0"
+  },
+  "asp:GridView": {
+    "prefix": "asp:GridView",
+    "description": "GridView with template columns, as used on the developer's list pages",
+    "body": [
+      "<asp:GridView ID=\"${1:gvDisplay}\" runat=\"server\" AllowPaging=\"False\" AutoGenerateColumns=\"False\" GridLines=\"None\" CellSpacing=\"1\" Width=\"100%\">",
+      "\t<Columns>",
+      "\t\t<asp:TemplateField HeaderText=\"${2:Title}\" HeaderStyle-HorizontalAlign=\"Left\" HeaderStyle-CssClass=\"Title\">",
+      "\t\t\t<ItemTemplate>",
+      "\t\t\t\t<%#Container.DataItem(\"${3:Field}\")%>",
+      "\t\t\t</ItemTemplate>",
+      "\t\t</asp:TemplateField>",
+      "\t</Columns>",
+      "</asp:GridView>$0"
+    ]
+  },
+  "asp:TemplateField": {
+    "prefix": "asp:TemplateField",
+    "body": [
+      "<asp:TemplateField HeaderText=\"${1:Title}\" HeaderStyle-HorizontalAlign=\"Left\" HeaderStyle-CssClass=\"Title\">",
+      "\t<ItemTemplate>",
+      "\t\t<%#Container.DataItem(\"${2:Field}\")%>",
+      "\t</ItemTemplate>",
+      "</asp:TemplateField>$0"
+    ]
+  },
+  "Server-side td": {
+    "prefix": "runat-td",
+    "description": "<td> the code-behind can reach as an HtmlTableCell",
+    "body": "<td id=\"${1:Cell}\" runat=\"server\">$0</td>"
+  },
+  "Server-side tr": {
+    "prefix": "runat-tr",
+    "description": "<tr> the code-behind can reach as an HtmlTableRow (e.g. to hide it)",
+    "body": [
+      "<tr id=\"${1:Row}\" runat=\"server\">",
+      "\t<td>$0</td>",
+      "</tr>"
+    ]
+  },
+  "Server-side span": {
+    "prefix": "runat-span",
+    "description": "<span> the code-behind can reach as an HtmlGenericControl",
+    "body": "<span id=\"${1:Value}\" runat=\"server\">$0</span>"
+  },
+  "Server-side div": {
+    "prefix": "runat-div",
+    "body": "<div id=\"${1:Area}\" runat=\"server\">$0</div>"
+  },
+  "Server-side hidden input": {
+    "prefix": "runat-hidden",
+    "description": "<input type=\"hidden\"> the code-behind can reach as an HtmlInputHidden",
+    "body": "<input type=\"hidden\" id=\"${1:Value}\" runat=\"server\" />$0"
+  }
+}

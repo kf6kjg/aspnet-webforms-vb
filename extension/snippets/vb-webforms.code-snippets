@@ -1,0 +1,47 @@
+{
+  "Page code-behind": {
+    "prefix": "codebehind-page",
+    "description": "Partial class for a .aspx.vb file; the name must match Inherits= in the @Page directive",
+    "body": [
+      "Partial Class ${1:${TM_FILENAME/\\.aspx\\.vb$//}}",
+      "\tInherits System.Web.UI.Page",
+      "",
+      "\tPrivate Sub Page_Load(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Load",
+      "\t\tIf Not IsPostBack Then",
+      "\t\t\t$0",
+      "\t\tEnd If",
+      "\tEnd Sub",
+      "",
+      "End Class"
+    ]
+  },
+  "User control code-behind": {
+    "prefix": "codebehind-control",
+    "description": "Partial class for a .ascx.vb file; the name must match Inherits= in the @Control directive",
+    "body": [
+      "Partial Class ${1:${TM_FILENAME/\\.ascx\\.vb$//}}",
+      "\tInherits System.Web.UI.UserControl",
+      "",
+      "\t$0",
+      "",
+      "End Class"
+    ]
+  },
+  "Page_Load": {
+    "prefix": "pageload",
+    "body": [
+      "Private Sub Page_Load(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Load",
+      "\t$0",
+      "End Sub"
+    ]
+  },
+  "Event handler": {
+    "prefix": "handles",
+    "description": "Event handler wired with Handles (the control needs runat=\"server\" and an ID)",
+    "body": [
+      "Private Sub ${1:btnSave}_${2:Click}(ByVal sender As Object, ByVal e As System.EventArgs) Handles ${1}.${2}",
+      "\t$0",
+      "End Sub"
+    ]
+  }
+}

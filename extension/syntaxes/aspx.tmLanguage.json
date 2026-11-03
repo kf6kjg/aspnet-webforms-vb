@@ -1,0 +1,140 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "ASP.NET Web Forms (VB)",
+  "scopeName": "text.html.aspx",
+  "comment": "HTML plus ASP.NET server syntax. <% %> blocks, <%-- --%> comments and <%@ %> directives are injections so they work anywhere, including inside HTML attribute values and <script>/<style>. Embedded code is VB (source.asp.vb.net, VS Code's built-in VB grammar).",
+  "patterns": [
+    { "include": "#server-tag" },
+    { "include": "text.html.derivative" }
+  ],
+  "injections": {
+    "L:text.html.aspx - (comment.block.aspx | meta.embedded.block.aspx | meta.tag.directive.aspx)": {
+      "patterns": [
+        { "include": "#server-comment" },
+        { "include": "#directive" },
+        { "include": "#code-block" }
+      ]
+    },
+    "L:text.html.aspx meta.attribute - (comment.block.aspx | meta.embedded.block.aspx | meta.tag.directive.aspx | string)": {
+      "comment": "HTML matches some attribute values (onclick, style) with one greedy regex that would swallow <%...%>. Take over any quoted value that contains <%, starting at its '='.",
+      "patterns": [
+        { "include": "#attribute-value-with-server-code" }
+      ]
+    }
+  },
+  "repository": {
+    "server-comment": {
+      "name": "comment.block.aspx",
+      "begin": "<%--",
+      "end": "--%>",
+      "beginCaptures": { "0": { "name": "punctuation.definition.comment.begin.aspx" } },
+      "endCaptures": { "0": { "name": "punctuation.definition.comment.end.aspx" } }
+    },
+    "directive": {
+      "name": "meta.tag.directive.aspx",
+      "begin": "(<%@)\\s*([A-Za-z]+)?",
+      "end": "%>",
+      "beginCaptures": {
+        "1": { "name": "punctuation.section.embedded.begin.aspx" },
+        "2": { "name": "keyword.control.directive.aspx" }
+      },
+      "endCaptures": { "0": { "name": "punctuation.section.embedded.end.aspx" } },
+      "patterns": [
+        {
+          "match": "([A-Za-z][\\w.:-]*)\\s*(=)",
+          "captures": {
+            "1": { "name": "entity.other.attribute-name.aspx" },
+            "2": { "name": "punctuation.separator.key-value.aspx" }
+          }
+        },
+        {
+          "name": "string.quoted.double.aspx",
+          "begin": "\"",
+          "end": "\"",
+          "beginCaptures": { "0": { "name": "punctuation.definition.string.begin.aspx" } },
+          "endCaptures": { "0": { "name": "punctuation.definition.string.end.aspx" } }
+        },
+        {
+          "name": "string.quoted.single.aspx",
+          "begin": "'",
+          "end": "'",
+          "beginCaptures": { "0": { "name": "punctuation.definition.string.begin.aspx" } },
+          "endCaptures": { "0": { "name": "punctuation.definition.string.end.aspx" } }
+        }
+      ]
+    },
+    "code-block": {
+      "comment": "<%# data binding, <%= output, <%: encoded output, <%$ expression builder, <% statements.",
+      "name": "meta.embedded.block.aspx",
+      "begin": "<%[#=:$]?",
+      "end": "%>",
+      "beginCaptures": { "0": { "name": "punctuation.section.embedded.begin.aspx" } },
+      "endCaptures": { "0": { "name": "punctuation.section.embedded.end.aspx" } },
+      "contentName": "source.vb.embedded.aspx",
+      "patterns": [
+        { "include": "#code-block-vb-overrides" },
+        { "include": "source.asp.vb.net" }
+      ]
+    },
+    "code-block-vb-overrides": {
+      "comment": "ASP.NET ends a code block at the first %> even inside a VB comment or string (the developer writes <%' comment %>). VB's own comment and string rules would run past it, so these versions stop at %>.",
+      "patterns": [
+        {
+          "name": "comment.line.apostrophe.asp",
+          "match": "(?:^[ \\t]+)?(')(?:[^%]|%(?!>))*",
+          "captures": { "1": { "name": "punctuation.definition.comment.asp" } }
+        },
+        {
+          "name": "string.quoted.double.asp",
+          "begin": "\"",
+          "end": "\"(?!\")|(?=%>)",
+          "beginCaptures": { "0": { "name": "punctuation.definition.string.begin.asp" } },
+          "endCaptures": { "0": { "name": "punctuation.definition.string.end.asp" } },
+          "patterns": [{ "match": "\"\"", "name": "constant.character.escape.apostrophe.asp" }]
+        }
+      ]
+    },
+    "attribute-value-with-server-code": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.html",
+          "begin": "(=)\\s*(\")(?=[^\"]*<%)",
+          "end": "\"",
+          "beginCaptures": {
+            "1": { "name": "punctuation.separator.key-value.html" },
+            "2": { "name": "punctuation.definition.string.begin.html" }
+          },
+          "endCaptures": { "0": { "name": "punctuation.definition.string.end.html" } },
+          "patterns": [{ "include": "text.html.basic#entities" }]
+        },
+        {
+          "name": "string.quoted.single.html",
+          "begin": "(=)\\s*(')(?=[^']*<%)",
+          "end": "'",
+          "beginCaptures": {
+            "1": { "name": "punctuation.separator.key-value.html" },
+            "2": { "name": "punctuation.definition.string.begin.html" }
+          },
+          "endCaptures": { "0": { "name": "punctuation.definition.string.end.html" } },
+          "patterns": [{ "include": "text.html.basic#entities" }]
+        }
+      ]
+    },
+    "server-tag": {
+      "comment": "<asp:TextBox ...>, <uc1:Header ...>: prefixed tags are server controls. Case-insensitive, as ASP.NET is.",
+      "name": "meta.tag.server.aspx",
+      "begin": "(</?)([A-Za-z]\\w*)(:)([A-Za-z]\\w*)(?=[\\s/>])",
+      "end": "(/?>)",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.tag.begin.html" },
+        "2": { "name": "entity.name.tag.namespace.aspx" },
+        "3": { "name": "punctuation.separator.namespace.aspx" },
+        "4": { "name": "entity.name.tag.aspx" }
+      },
+      "endCaptures": { "1": { "name": "punctuation.definition.tag.end.html" } },
+      "patterns": [
+        { "include": "text.html.basic#attribute" }
+      ]
+    }
+  }
+}

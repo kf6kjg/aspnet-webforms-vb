@@ -1,0 +1,65 @@
+{
+  "name": "aspnet-webforms-vb",
+  "displayName": "ASP.NET Web Forms (VB) for Web Site projects",
+  "description": "Highlighting and snippets for legacy ASP.NET Web Forms Web Site projects in VB.NET (.aspx, .ascx, .master).",
+  "version": "0.1.0",
+  "publisher": "kf6kjg",
+  "private": true,
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Snippets"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "aspx-vb",
+        "aliases": [
+          "ASP.NET Web Forms (VB)",
+          "aspx"
+        ],
+        "extensions": [
+          ".aspx",
+          ".ascx",
+          ".master"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "aspx-vb",
+        "scopeName": "text.html.aspx",
+        "path": "./syntaxes/aspx.tmLanguage.json",
+        "embeddedLanguages": {
+          "source.vb.embedded.aspx": "vb",
+          "source.css": "css",
+          "source.js": "javascript"
+        }
+      }
+    ],
+    "snippets": [
+      {
+        "language": "aspx-vb",
+        "path": "./snippets/aspx.code-snippets"
+      },
+      {
+        "language": "vb",
+        "path": "./snippets/vb-webforms.code-snippets"
+      }
+    ]
+  },
+  "scripts": {
+    "test": "vscode-tmgrammar-test -g syntaxes/aspx.tmLanguage.json -g test/vendor-grammars/html.tmLanguage.json -g test/vendor-grammars/html-derivative.tmLanguage.json -g test/vendor-grammars/asp-vb-net.tmLanguage.json -g test/vendor-grammars/JavaScript.tmLanguage.json -g test/vendor-grammars/css.tmLanguage.json \"test/grammar/**/*.test.*\" && node test/check-manifest.mjs",
+    "package": "node -e \"require('fs').mkdirSync('dist',{recursive:true})\" && vsce package --allow-missing-repository --out dist/"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "^4.1.0",
+    "vscode-oniguruma": "^1.7.0",
+    "vscode-textmate": "^7.0.4",
+    "vscode-tmgrammar-test": "^0.1.3"
+  }
+}
