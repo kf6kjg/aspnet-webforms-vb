@@ -1,11 +1,11 @@
-<%@ Page Language="VB" AutoEventWireup="false" CodeFile="PayPal.aspx.vb" Inherits="PayPal" %>
+<%@ Page Language="VB" AutoEventWireup="false" CodeFile="Checkout.aspx.vb" Inherits="Checkout" %>
 <!DOCTYPE html>
 <html>
 <head>
  <title id="PgTitle" runat="server">Checkout</title>
 </head>
 <body id="BodyTag" runat="server">
- <form action="https://www.paypal.com/cgi-bin/webscr" method="post">
+ <form action="https://payments.example.com/checkout" method="post">
   <input type="hidden" id="return" runat="server" />
   <input type="text" id="Amount" runat="server" />
   <table>

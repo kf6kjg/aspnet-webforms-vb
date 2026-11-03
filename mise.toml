@@ -9,10 +9,6 @@ node = "24"
 DOTNET_CLI_TELEMETRY_OPTOUT = "1"
 DOTNET_NOLOGO = "1"
 
-[tasks.spike]
-description = "Run the Roslyn feasibility spike against samples/"
-run = "dotnet run --project spike"
-
 [tasks.scan]
 description = "Read-only inventory of the Web Site projects under $SITES_ROOT; writes .scan/report.{md,json}"
 run = "dotnet run scripts/scan-sites.cs --"

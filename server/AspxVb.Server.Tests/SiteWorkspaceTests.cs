@@ -27,7 +27,7 @@ public class SiteWorkspaceTests
     [Fact]
     public async Task Generated_partial_handles_html_controls_keywords_and_head_context()
     {
-        var text = await GeneratedPartialFor("PayPal.aspx.vb");
+        var text = await GeneratedPartialFor("Checkout.aspx.vb");
         Assert.Contains("[return] As Global.System.Web.UI.HtmlControls.HtmlInputHidden", text);
         Assert.Contains("PgTitle As Global.System.Web.UI.HtmlControls.HtmlGenericControl", text); // <head> isn't runat=server
         Assert.Contains("Total As Global.System.Web.UI.HtmlControls.HtmlTableCell", text);
@@ -37,7 +37,7 @@ public class SiteWorkspaceTests
 
     [Theory]
     [InlineData("Default.aspx.vb")]
-    [InlineData("PayPal.aspx.vb")]
+    [InlineData("Checkout.aspx.vb")]
     [InlineData("Controls/Header.ascx.vb")]
     [InlineData("App_Code/TextHelpers.vb")]
     [InlineData("App_Code/Mailer.vb")]

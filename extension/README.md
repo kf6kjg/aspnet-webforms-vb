@@ -75,10 +75,10 @@ Only open files are checked, so backup copies elsewhere in the site stay quiet. 
 inside VB code (for example `Handles` naming a control that doesn't exist) come from the
 language server in stage 3.
 
-## What works (stage 3): IntelliSense in VB files
+## What works (stage 3): completion and error marking in VB files
 
 In code-behind (`.aspx.vb`, `.ascx.vb`, `.master.vb`) and `App_Code` files, a bundled
-language server compiles the code the way ASP.NET 4.x does on his server:
+language server compiles the code the way ASP.NET 4.x does on the web server:
 
 - **Completion** with descriptions, including the controls declared in the markup
   (`txtName.`), App_Code classes, web-service proxies, `Bin` DLLs, and the framework.
@@ -183,7 +183,7 @@ colored, but the value in between can't be.
 
 - Signature help (parameter info while typing a call).
 - Formatting a line when you leave it with the arrow keys (only Enter triggers it).
-- IntelliSense inside `<% %>` blocks in markup.
+- Completion and error marking inside `<% %>` blocks in markup.
 - `Global.asax` code-behind, `Profile` properties, and `@MasterType`.
 - VB inside `<% %>` uses VS Code's built-in VB grammar, the same one `.vb` files get.
   It is a simple grammar, so highlighting is basic.
@@ -202,4 +202,4 @@ From the repo root: `mise run ext:install-deps`, then:
   HTML, JavaScript, CSS, XML, JSON) and the code action's statement rules disagree.
 - `mise run ext:package`: builds `extension/dist/*.vsix`
 
-To install the build: `code --install-extension extension/dist/aspnet-webforms-vb-0.10.0.vsix`.
+To install the build: `code --install-extension extension/dist/aspnet-webforms-vb-<version>.vsix`.

@@ -9,7 +9,7 @@ public class FormattingTests
     private static readonly string[] Messy =
     [
         "",
-        "Partial Class PayPal",
+        "Partial Class Checkout",
         " Inherits System.Web.UI.Page",
         "",
         " Private Sub Page_Load(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Load",
@@ -25,7 +25,7 @@ public class FormattingTests
     private static async Task<(SourceText Before, SourceText After, IReadOnlyList<TextChange> Changes)> Format(Func<SourceText, TextSpan> span)
     {
         var site = Sample.Site();
-        var path = Sample.File("PayPal.aspx.vb");
+        var path = Sample.File("Checkout.aspx.vb");
         site.SetText(path, string.Join("\r\n", Messy));
         var doc = site.GetDocument(path)!;
         var before = await doc.GetTextAsync();
@@ -66,7 +66,7 @@ public class FormattingTests
     public async Task Already_formatted_code_is_left_alone()
     {
         var site = Sample.Site();
-        foreach (var file in new[] { "Default.aspx.vb", "PayPal.aspx.vb", "Controls/Header.ascx.vb", "App_Code/TextHelpers.vb", "App_Code/Mailer.vb" })
+        foreach (var file in new[] { "Default.aspx.vb", "Checkout.aspx.vb", "Controls/Header.ascx.vb", "App_Code/TextHelpers.vb", "App_Code/Mailer.vb" })
         {
             var doc = site.GetDocument(Sample.File(file))!;
             var text = await doc.GetTextAsync();

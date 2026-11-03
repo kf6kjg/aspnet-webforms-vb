@@ -1,5 +1,5 @@
 
-Partial Class PayPal
+Partial Class Checkout
  Inherits System.Web.UI.Page
 
  ' Exercises what the real sites taught the server: a <title runat="server"> outside a

@@ -23,7 +23,7 @@ probably not work.
 ## Architecture
 
 Three stages, each usable on its own. Features are limited to what he uses in Visual
-Studio: IntelliSense, syntax highlighting, and error marking, plus go to definition
+Studio: completion, syntax highlighting, and error marking, plus go to definition
 ([ADR 0005](docs/adr/0005-feature-scope.md)). Page templates are left to a separate
 file-template extension.
 
@@ -61,7 +61,6 @@ file-template extension.
 | --- | --- |
 | [extension/](extension) | VS Code extension: grammar, snippets, navigation, language client (stages 1-3) |
 | [server/](server) | Language server: Roslyn workspace over LSP (stage 3) |
-| [spike/](spike) | Throwaway feasibility console app |
 | [samples/](samples) | A tiny fake Web Site project to test against |
 | [scripts/](scripts) | Repo scripts (.NET file-based apps), run through mise tasks |
 | [docs/](docs) | ADRs and spike results |
@@ -84,49 +83,45 @@ file-template extension.
 - [x] Stage 2: `OnClick="Foo"` → `Sub Foo`
 - [x] Stage 2: `Handles ctl.Event` ↔ markup control
 - [x] Stage 2: `<%@ Register %>` and `<uc1:X>` → user control file
-- [x] Stage 2 addition (the project director's request, beyond ADR 0005's list):
+- [x] Stage 2 addition (beyond ADR 0005's list):
   `href=` / `src=` / `ImageUrl=` and similar → the referenced site file
-- [x] Stage 2 addition (the project director's request): reference checks in open markup
+- [x] Stage 2 addition: reference checks in open markup
   files. Errors for broken `CodeFile` / `Inherits` / `@Register` / unregistered `uc1:`
   tags / missing `On*=` handlers; warnings for missing local files. Across all 1,630
   real markup files: 30 errors in 10 files, all real (backup and design copies plus one
   live page), and 394 missing-file warnings in 139 files.
 - Stage 2 against the real sites (`mise run ext:smoke`): about 12,000 code navigation
   targets and 8,315 URL references resolve. The 394 URL references that don't are
-  missing images, scripts, and pages, or pages that belong to other apps. The 60 that don't are real broken references in the sites (pages in
-  design and backup copies whose user controls weren't copied with them, one page with
-  unregistered `uc1:` tags, and one page with `Handles` on controls that don't exist)
-  plus a C# sample.
+  missing images, scripts, and pages, or pages that belong to other apps. The 60 code
+  targets that don't are real broken references in the sites (pages in design and backup
+  copies whose user controls weren't copied with them, one page with unregistered `uc1:`
+  tags, and one page with `Handles` on controls that don't exist) plus a C# sample.
 - [x] Stage 3: App_Code + per-page compilations, page projects created on first use
 - [x] Stage 3: references from `Bin/*.dll`, `web.config` `<assemblies>`, .NET 4.6.1 reference assemblies, and user-supplied GAC assemblies (`aspxVb.assemblyFolders`, with instructions shown when one is missing)
 - [x] Stage 3: virtual partial classes generated from markup (WebControls, HtmlControls, `@Register` user controls)
 - [x] Stage 3: web-service proxies generated from `App_WebReferences/*.wsdl` (found by compiling the real sites)
 - [x] Stage 3: language server wired into the extension: completion, diagnostics, go to definition, hover
   ([ADR 0006](docs/adr/0006-language-server-implementation.md))
-- [x] VB pretty listing (the project director's decision,
-  [ADR 0008](docs/adr/0008-vb-pretty-listing.md)): Enter formats the finished line, and
+- [x] VB pretty listing ([ADR 0008](docs/adr/0008-vb-pretty-listing.md)): Enter formats the finished line, and
   Format Document / Format Selection work. One-space indent, VB casing, comments never
   move, CRLF kept. Measured with `mise run server:format-check`: on the real sites it
   would change 0.18% of lines, all of them old lines Visual Studio never re-listed.
 - [x] Automatic block ends on Enter (`End If`, `End Sub`, `Next`, `End Try`, …), as in Visual
   Studio, including Enter after `Then` turning a one-line `If` into a block
   ([ADR 0009](docs/adr/0009-automatic-end-constructs.md)).
-- [x] SQL highlighting in VB strings (the project director's decision,
-  [ADR 0010](docs/adr/0010-sql-highlighting-in-vb-strings.md)): `SQLCmd = …` statements
+- [x] SQL highlighting in VB strings ([ADR 0010](docs/adr/0010-sql-highlighting-in-vb-strings.md)): `SQLCmd = …` statements
   automatically, other variables after a `' lang=sql` / `tsql` / `mysql` / `pgsql` marker
   line, and a code action that suggests the marker. On the real sites (`mise run
   ext:smoke`): 11,956 SQL statements in 1,819 `.vb` files highlighted, with the grammar
   and the code action's statement rules agreeing on every line.
-- [x] HTML, JavaScript, CSS, XML and JSON in VB strings (the project director's decision,
-  [ADR 0011](docs/adr/0011-web-languages-in-vb-strings.md)): html-named variables and
+- [x] HTML, JavaScript, CSS, XML and JSON in VB strings ([ADR 0011](docs/adr/0011-web-languages-in-vb-strings.md)): html-named variables and
   `InnerHtml` are HTML automatically. The script argument of `Attributes.Add("on…", …)`,
   `Attributes("on…") = …` and the menu helpers' `AddItem("L", …)` is JavaScript, and
   `"style"` is CSS. Anything else after a `' lang=html` / `js` / `css` / `xml` / `json`
   marker, which a code action suggests. `OnClientClick=` in markup is JavaScript. On the
   real sites: 5,721 HTML, 2,887 JavaScript and 290 CSS statements highlighted, with the
   grammars and the statement rules agreeing on every line.
-- [x] Windows path handling (the project director's decision,
-  [ADR 0012](docs/adr/0012-windows-and-reference-case.md)): the same `.vsix` runs on
+- [x] Windows path handling ([ADR 0012](docs/adr/0012-windows-and-reference-case.md)): the same `.vsix` runs on
   Linux and Windows, and every lookup uses the on-disk spelling. A `CodeFile=`,
   `@Register Src=` or URL whose case differs from disk is a warning. On the real sites:
   5,899 such references in 1,257 files, from 55 distinct ones, nearly all `/styles/` and
@@ -165,7 +160,6 @@ Tools and tasks are managed by [mise](https://mise.jdx.dev/)
 ```sh
 mise trust && mise install   # once: .NET SDK and Node.js, at the versions in mise.toml
 mise tasks                   # list tasks
-mise run spike               # Roslyn feasibility spike against samples/
 mise run scan                # read-only scan of the real sites -> .scan/ (gitignored)
 mise run ext:install-deps    # once: extension npm dev dependencies
 mise run ext:test            # grammar tests + manifest check

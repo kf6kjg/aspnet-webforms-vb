@@ -1,6 +1,4 @@
-# .NET build output (spike, server). Anchored so samples/**/Bin is never ignored.
-/spike/bin/
-/spike/obj/
+# .NET build output (server). Anchored so samples/**/Bin is never ignored.
 /server/**/bin/
 /server/**/obj/
 

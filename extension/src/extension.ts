@@ -281,7 +281,7 @@ function assemblyFolders(): string[] {
 async function startLanguageServer(context: vscode.ExtensionContext): Promise<void> {
   const command = await serverCommand(context);
   if (typeof command === "string") {
-    void vscode.window.showWarningMessage(`ASP.NET Web Forms (VB): ${command}, so IntelliSense and VB error marking are off. Highlighting and navigation still work.`);
+    void vscode.window.showWarningMessage(`ASP.NET Web Forms (VB): ${command}, so VB completion and error marking are off. Highlighting and navigation still work.`);
     return;
   }
   const serverOptions: ServerOptions = { ...command, transport: TransportKind.stdio };

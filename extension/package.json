@@ -1,11 +1,18 @@
 {
   "name": "aspnet-webforms-vb",
   "displayName": "ASP.NET Web Forms (VB) for Web Site projects",
-  "description": "Highlighting, snippets, navigation and IntelliSense for legacy ASP.NET Web Forms Web Site projects in VB.NET (.aspx, .ascx, .master, code-behind).",
+  "description": "Highlighting, snippets, navigation, completion and error checking for legacy ASP.NET Web Forms Web Site projects in VB.NET (.aspx, .ascx, .master, code-behind).",
   "version": "0.11.0",
   "publisher": "kf6kjg",
   "private": true,
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kf6kjg/aspnet-webforms-vb.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kf6kjg/aspnet-webforms-vb/issues"
+  },
   "engines": {
     "vscode": "^1.90.0"
   },
@@ -154,7 +161,7 @@
     "compile": "tsc -p .",
     "vscode:prepublish": "npm run compile",
     "test": "npm run compile && node --test \"out/test/**/*.test.js\" && vscode-tmgrammar-test -g syntaxes/aspx.tmLanguage.json -g test/vendor-grammars/html.tmLanguage.json -g test/vendor-grammars/html-derivative.tmLanguage.json -g test/vendor-grammars/asp-vb-net.tmLanguage.json -g test/vendor-grammars/JavaScript.tmLanguage.json -g test/vendor-grammars/css.tmLanguage.json \"test/grammar/**/*.test.*\" && node test/check-manifest.mjs",
-    "package": "node -e \"require('fs').mkdirSync('dist',{recursive:true})\" && vsce package --allow-missing-repository --out dist/"
+    "package": "node -e \"require('fs').mkdirSync('dist',{recursive:true})\" && vsce package --out dist/"
   },
   "devDependencies": {
     "@types/node": "^20.19.43",

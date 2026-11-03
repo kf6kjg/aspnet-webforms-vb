@@ -1,6 +1,7 @@
 # Feasibility spike results
 
-Date: 2026-11-02 · Code: [/spike](../spike) · Raw output: [spike-output.txt](spike-output.txt)
+Date: 2026-11-02 · Code: the throwaway `spike/` console app, since removed (it's in the
+git history at commit `2fc0b6c`)
 
 ## Question
 
@@ -32,14 +33,10 @@ be slower and have not been measured.
 
 ## What broke
 
-Nothing in the approach. The only problems were incidental:
-
-- No .NET SDK was installed and `sudo` needs a password, so the SDK was installed
-  user-locally with Microsoft's `dotnet-install.sh` into `~/.dotnet` (not on `PATH`;
-  run as `~/.dotnet/dotnet`).
-- The reference-assemblies package's MSBuild props are meant to retarget a `net48`
-  build. The spike is `net10.0` and only wants the files on disk, so it references the
-  package with `ExcludeAssets="all"` and `GeneratePathProperty="true"`.
+Nothing in the approach. The only problem was incidental: the reference-assemblies
+package's MSBuild props are meant to retarget a `net48` build. The spike is `net10.0`
+and only wants the files on disk, so it references the package with
+`ExcludeAssets="all"` and `GeneratePathProperty="true"`.
 
 ## What the spike did not prove
 
