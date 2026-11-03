@@ -44,11 +44,11 @@
       "End Sub"
     ]
   },
-  "SQL marker": {
-    "prefix": "lang=sql",
-    "description": "Highlight the strings of the next statement as SQL (SQLCmd = … statements are SQL without it)",
+  "Language marker": {
+    "prefix": "lang=",
+    "description": "Highlight the strings of the next statement in a language: SQL (and its dialects), HTML, JavaScript, CSS, XML or JSON. SQLCmd = … is SQL and html-named variables are HTML without it.",
     "body": [
-      "' lang=${1|sql,tsql,mysql,pgsql|}",
+      "' lang=${1|sql,tsql,mysql,pgsql,html,js,css,xml,json|}",
       "$0"
     ]
   }

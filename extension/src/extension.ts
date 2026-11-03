@@ -2,7 +2,8 @@
 // checks, and the Visual Studio style View Code (F7) / View Markup (Shift+F7) commands;
 // the logic lives in navigation.ts and diagnostics.ts. Stage 3: starts the language server
 // (server/AspxVb.Server) for completion, diagnostics, definition and hover in VB files.
-// SQL in VB strings: the code action that suggests `' lang=` markers (sqlmarker.ts).
+// SQL, HTML, JavaScript, CSS, XML and JSON in VB strings: the code action that suggests
+// `' lang=` markers (sqlmarker.ts, langmarker.ts).
 
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -11,6 +12,7 @@ import { LanguageClient, LanguageClientOptions, ServerOptions, TransportKind } f
 import { Host, Jump, codeBehindFor, definitionInCodeBehind, definitionInMarkup, markupFor } from "./navigation";
 import { checkMarkup } from "./diagnostics";
 import { dialectNames, suggestMarker } from "./sqlmarker";
+import { languageNames, suggestLanguage } from "./langmarker";
 
 let client: LanguageClient | undefined;
 
@@ -142,16 +144,17 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
   );
   registerEndConstructs(context);
-  registerSqlMarkers(context);
+  registerLanguageMarkers(context);
   void startLanguageServer(context);
 }
 
 /**
- * Lightbulb on a statement whose strings look like SQL: add the `' lang=<dialect>`
- * marker above it, or narrow `lang=sql` / the SQLCmd default to the dialect its syntax
- * shows (ADR 0010). The highlighting itself is the grammar's.
+ * Lightbulb on a statement whose strings look like SQL, HTML, JavaScript, CSS, XML or
+ * JSON: add the `' lang=<language>` marker above it, or narrow `lang=sql` / the SQLCmd
+ * default to the dialect its syntax shows (ADR 0010, ADR 0011). The highlighting itself is
+ * the grammars'.
  */
-function registerSqlMarkers(context: vscode.ExtensionContext): void {
+function registerLanguageMarkers(context: vscode.ExtensionContext): void {
   const kind = vscode.CodeActionKind.RefactorRewrite;
   context.subscriptions.push(
     vscode.languages.registerCodeActionsProvider({ language: "vb" }, {
@@ -162,18 +165,28 @@ function registerSqlMarkers(context: vscode.ExtensionContext): void {
         const lines: string[] = [];
         for (let i = from; i < to; i++) lines.push(doc.lineAt(i).text);
         const eol = doc.eol === vscode.EndOfLine.CRLF ? "\r\n" : "\n";
-        return suggestMarker(lines, range.start.line - from).map((s) => {
-          const action = new vscode.CodeAction(s.dialect === "sql" ? "Mark as SQL" : `Mark as SQL (${dialectNames[s.dialect]})`, kind);
-          action.isPreferred = s.preferred;
-          action.edit = new vscode.WorkspaceEdit();
-          if (s.replace) {
-            const line = s.replace.line + from;
-            action.edit.replace(doc.uri, new vscode.Range(line, s.replace.start, line, s.replace.end), s.text);
-          } else {
-            action.edit.insert(doc.uri, new vscode.Position(s.insertAbove! + from, 0), s.text + eol);
-          }
-          return action;
-        });
+        const action = (title: string, preferred: boolean, edit: (e: vscode.WorkspaceEdit) => void) => {
+          const a = new vscode.CodeAction(title, kind);
+          a.isPreferred = preferred;
+          a.edit = new vscode.WorkspaceEdit();
+          edit(a.edit);
+          return a;
+        };
+        const line = range.start.line - from;
+        return [
+          ...suggestMarker(lines, line).map((s) =>
+            action(s.dialect === "sql" ? "Mark as SQL" : `Mark as SQL (${dialectNames[s.dialect]})`, s.preferred, (e) => {
+              if (s.replace) {
+                const at = s.replace.line + from;
+                e.replace(doc.uri, new vscode.Range(at, s.replace.start, at, s.replace.end), s.text);
+              } else {
+                e.insert(doc.uri, new vscode.Position(s.insertAbove! + from, 0), s.text + eol);
+              }
+            })),
+          ...suggestLanguage(lines, line).map((s) =>
+            action(`Mark as ${languageNames[s.language]}`, s.preferred, (e) =>
+              e.insert(doc.uri, new vscode.Position(s.insertAbove + from, 0), s.text + eol))),
+        ];
       },
     }, { providedCodeActionKinds: [kind] }),
   );

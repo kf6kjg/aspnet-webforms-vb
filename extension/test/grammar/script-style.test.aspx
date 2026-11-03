@@ -29,3 +29,10 @@
 <!--                                                  ^^^^^ entity.other.attribute-name.html
 <a href="x.aspx" onclick="return confirm('Sure?');">ok</a>
 <!--                             ^^^^^^^ source.js
+<asp:Button ID="btnGo" runat="server" OnClientClick="return confirm('Sure?');" OnClick="btnGo_Click" />
+<!--                                  ^^^^^^^^^^^^^ meta.attribute.event-handler.onclientclick.html entity.other.attribute-name.html
+<!--                                                 ^^^^^^ source.js keyword.control.flow.js
+<!--                                                                ^^^^^^^ source.js string.quoted.single.js
+<!--                                                                           ^^^^^^^ entity.other.attribute-name.html - source.js
+<asp:LinkButton runat="server" OnClientClick="Go(<%= Id %>);" />
+<!--                                             ^^^ punctuation.section.embedded.begin.aspx

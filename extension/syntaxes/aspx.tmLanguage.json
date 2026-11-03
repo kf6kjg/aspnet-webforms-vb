@@ -133,7 +133,42 @@
       },
       "endCaptures": { "1": { "name": "punctuation.definition.tag.end.html" } },
       "patterns": [
+        { "include": "#client-click-attribute" },
         { "include": "text.html.basic#attribute" }
+      ]
+    },
+    "client-click-attribute": {
+      "comment": "OnClientClick=\"...\" on a server control is JavaScript, like HTML's on... attributes, which the HTML grammar only knows by name (ADR 0011). A value with <% %> is left to attribute-value-with-server-code.",
+      "name": "meta.attribute.event-handler.onclientclick.html",
+      "begin": "(?i)OnClientClick(?![\\w:-])",
+      "beginCaptures": { "0": { "name": "entity.other.attribute-name.html" } },
+      "end": "(?=\\s*+[^=\\s])",
+      "patterns": [
+        {
+          "begin": "=",
+          "beginCaptures": { "0": { "name": "punctuation.separator.key-value.html" } },
+          "end": "(?<=[^\\s=])(?!\\s*=)|(?=/?>)",
+          "patterns": [
+            {
+              "name": "string.quoted.double.html",
+              "begin": "\"",
+              "end": "\"",
+              "beginCaptures": { "0": { "name": "punctuation.definition.string.begin.html" } },
+              "endCaptures": { "0": { "name": "punctuation.definition.string.end.html" } },
+              "contentName": "meta.embedded.line.js source.js",
+              "patterns": [{ "match": "[^\"]+", "captures": { "0": { "patterns": [{ "include": "source.js" }] } } }]
+            },
+            {
+              "name": "string.quoted.single.html",
+              "begin": "'",
+              "end": "'",
+              "beginCaptures": { "0": { "name": "punctuation.definition.string.begin.html" } },
+              "endCaptures": { "0": { "name": "punctuation.definition.string.end.html" } },
+              "contentName": "meta.embedded.line.js source.js",
+              "patterns": [{ "match": "[^']+", "captures": { "0": { "patterns": [{ "include": "source.js" }] } } }]
+            }
+          ]
+        }
       ]
     }
   }

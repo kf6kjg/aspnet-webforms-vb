@@ -117,6 +117,14 @@ file-template extension.
   line, and a code action that suggests the marker. On the real sites (`mise run
   ext:smoke`): 11,956 SQL statements in 1,819 `.vb` files highlighted, with the grammar
   and the code action's statement rules agreeing on every line.
+- [x] HTML, JavaScript, CSS, XML and JSON in VB strings (the project director's decision,
+  [ADR 0011](docs/adr/0011-web-languages-in-vb-strings.md)): html-named variables and
+  `InnerHtml` are HTML automatically. The script argument of `Attributes.Add("on…", …)`,
+  `Attributes("on…") = …` and the menu helpers' `AddItem("L", …)` is JavaScript, and
+  `"style"` is CSS. Anything else after a `' lang=html` / `js` / `css` / `xml` / `json`
+  marker, which a code action suggests. `OnClientClick=` in markup is JavaScript. On the
+  real sites: 5,721 HTML, 2,887 JavaScript and 290 CSS statements highlighted, with the
+  grammars and the statement rules agreeing on every line.
 - Stage 3 against the real sites (`mise run server:check`): 22 sites and 1,628 markup files
   compile. Every error reported on a live page is a real bug in that page (undeclared
   variables, `Handles` on controls that no longer exist, unfinished statements). Opening a
@@ -176,3 +184,7 @@ SCAN_EXCLUDE = "ThirdPartyFolder;OtherSamples"   # root-relative, ';'-separated
 
 [MIT](LICENSE). The grammars copied under `extension/test/vendor-grammars/` are Microsoft's,
 also MIT (see the README there).
+
+## Disclaimer
+
+This entire repo is AI puke barely reviewed by humans. You are warned.

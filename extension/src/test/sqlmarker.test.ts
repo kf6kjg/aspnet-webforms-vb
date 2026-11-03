@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import * as assert from "node:assert/strict";
-import { dialectsIn, looksLikeSql, markerOf, sqlRegions, statementAt, suggestMarker } from "../sqlmarker";
+import { dialectsIn, looksLikeSql, sqlRegions, suggestMarker } from "../sqlmarker";
 
 // In the developer's style: one-space indent, SQLCmd built with + over continued lines.
 const lines = [
@@ -23,24 +23,6 @@ const lines = [
   "End Class",                                                             // 16
 ];
 
-test("markerOf reads the dialect, its aliases and its column range", () => {
-  assert.deepEqual(markerOf("  ' lang=sql"), { dialect: "sql", start: 9, end: 12 });
-  assert.equal(markerOf("' LANGUAGE = MariaDB")?.dialect, "mysql");
-  assert.equal(markerOf("'lang=mssql")?.dialect, "tsql");
-  assert.equal(markerOf("' lang=postgres")?.dialect, "pgsql");
-  assert.equal(markerOf("' lang=sqlite"), undefined);
-  assert.equal(markerOf("x = 1 ' lang=sql"), undefined);
-});
-
-test("statementAt follows implicit line continuation both ways, and stops at a comment", () => {
-  assert.deepEqual(statementAt(lines, 4), { start: 3, end: 5 });
-  assert.deepEqual(statementAt(lines, 3), { start: 3, end: 5 });
-  assert.deepEqual(statementAt(lines, 6), { start: 6, end: 6 });
-  assert.deepEqual(statementAt(lines, 8), { start: 7, end: 8 });
-  assert.deepEqual(statementAt(["a = \"x\" + ' not a continuation", "b = 1"], 0), { start: 0, end: 0 });
-  assert.deepEqual(statementAt(["a = \"it's +\"", "b = 1"], 0), { start: 0, end: 0 });
-});
-
 test("sqlRegions finds SQLCmd statements and marked statements, as the grammar does", () => {
   assert.deepEqual(sqlRegions(lines), [
     { start: 3, end: 5, dialect: "sql" },
@@ -48,6 +30,10 @@ test("sqlRegions finds SQLCmd statements and marked statements, as the grammar d
     { start: 11, end: 11, dialect: "sql" },
     { start: 12, end: 13, dialect: "mysql", marker: 12 },
   ]);
+});
+
+test("sqlRegions: another language's marker claims the statement, SQLCmd or not", () => {
+  assert.deepEqual(sqlRegions(["  ' lang=html", "  SQLCmd = \"<b>\"", "  SQLCmd = \"Select 1\""]), [{ start: 2, end: 2, dialect: "sql" }]);
 });
 
 test("looksLikeSql accepts queries and clause fragments, not log messages", () => {
@@ -81,6 +67,7 @@ test("suggestMarker: nothing for log messages, plain SQLCmd, a dialect marker, o
   assert.deepEqual(suggestMarker(lines, 13), []);
   assert.deepEqual(suggestMarker(lines, 9), []);
   assert.deepEqual(suggestMarker(lines, 1), []);
+  assert.deepEqual(suggestMarker(["  ' lang=html", "  tSel = \"Select a From b\""], 1), []);
 });
 
 test("suggestMarker: dialect syntax narrows lang=sql in place, or marks a SQLCmd statement", () => {

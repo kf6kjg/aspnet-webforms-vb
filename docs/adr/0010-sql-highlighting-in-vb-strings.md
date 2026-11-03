@@ -1,6 +1,6 @@
 # 0010. SQL highlighting in VB strings
 
-Date: 2026-11-02 · Status: Accepted
+Date: 2026-11-02 · Status: Accepted; the statement end (open parentheses), shared statement code and grammar structure amended by [ADR 0011](0011-web-languages-in-vb-strings.md)
 
 ## Context
 

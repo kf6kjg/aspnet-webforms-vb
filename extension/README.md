@@ -22,7 +22,7 @@ developer's code bases and hardcodes their conventions.
     `asp:GridView`, `asp:TemplateField`, `runat-td`, `runat-tr`, `runat-span`,
     `runat-div`, `runat-hidden`
   - VB code-behind: `codebehind-page`, `codebehind-control`, `pageload`, `handles`,
-    `lang=sql`
+    `lang=` (the language marker)
 - Toggle-comment uses `<%-- --%>`.
 
 ## What works (stage 2): navigation
@@ -137,7 +137,7 @@ string color, and the SQL stands out inside it. This needs no language server.
   ```
 
   The marker names the dialect: `sql` (generic), `tsql`, `mysql` or `pgsql`. A marker
-  above a `SQLCmd` statement replaces the automatic generic dialect. The `lang=sql`
+  above a `SQLCmd` statement replaces the automatic generic dialect. The `lang=`
   snippet inserts one.
 - **Suggestions:** when the cursor is on a statement whose strings look like SQL, the
   lightbulb offers **Mark as SQL** and adds the marker. On a `SQLCmd` statement (or a
@@ -147,6 +147,36 @@ string color, and the SQL stands out inside it. This needs no language server.
 
 The dialects differ only in a few rules. For example, `#` starts a comment only with
 `lang=mysql`, because in T-SQL it names a temporary table.
+
+## HTML, JavaScript, CSS, XML and JSON in VB strings
+
+The same goes for the page output built in strings: tags, attributes, entities and
+comments in HTML, with the CSS in `style=""…""` and the JavaScript in `onclick=""…""`;
+JavaScript keywords, calls and strings; CSS properties and values; XML tags; and JSON
+keys and values.
+
+- **Automatic:**
+  - HTML: any statement that assigns to a name containing `html`, such as `tHtmlOut =`,
+    `OutHtml =` or `PageTitle.InnerHtml =`. Strings inside `IIf(…)` and other calls in
+    the statement count too.
+  - JavaScript: the script argument of `X.Attributes.Add("onclick", …)` (any `on…`
+    attribute) and of the menu helpers' `SBMenu.AddItem("L", …)`, and the right side
+    of `X.Attributes("onload") = …`.
+  - CSS: the same with `"style"`, as in `Row.Attributes("style") = "display: none;"`.
+- **Other statements:** the marker line above the statement, as for SQL:
+  `' lang=html`, `' lang=js` (or `javascript`), `' lang=css`, `' lang=xml` or
+  `' lang=json`. A marker always wins, so `' lang=html` above `SQLCmd = …` makes that
+  statement HTML.
+- **Suggestions:** on an assignment, `Response.Write` or `Return` whose strings start
+  with a tag (or close one), start with `<?xml` or `{"`, look like a script
+  (`var x =`, `function`, `window.`), or are nothing but CSS declarations, the
+  lightbulb offers **Mark as HTML** (or XML, JSON, JavaScript, CSS). Messages with a
+  `<br>` inside them aren't suggested.
+- In markup, `OnClientClick="…"` on `asp:` controls is highlighted as JavaScript, like
+  `onclick="…"` on HTML tags.
+
+Each string is colored on its own. In `"<td class=" + x + ">"` the tag and `>` are
+colored, but the value in between can't be.
 
 ## Not yet
 
@@ -167,8 +197,8 @@ From the repo root: `mise run ext:install-deps`, then:
 - `mise run ext:smoke`: runs over every real site under `$SITES_ROOT`, read-only.
   It tokenizes every markup file and reports any `%>` the grammar loses, then tries
   every navigation target and reports the ones that don't resolve. Last, it tokenizes
-  every `.vb` file and reports any line where the SQL highlighting and the code action's
-  statement rules disagree.
+  every `.vb` file and reports any line where the highlighted string language (SQL,
+  HTML, JavaScript, CSS, XML, JSON) and the code action's statement rules disagree.
 - `mise run ext:package`: builds `extension/dist/*.vsix`
 
-To install the build: `code --install-extension extension/dist/aspnet-webforms-vb-0.9.0.vsix`.
+To install the build: `code --install-extension extension/dist/aspnet-webforms-vb-0.10.0.vsix`.

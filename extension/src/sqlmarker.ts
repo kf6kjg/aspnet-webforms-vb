@@ -1,95 +1,14 @@
-// SQL in VB strings (ADR 0010): where a statement starts and ends, which statements the
-// grammar (syntaxes/vb-sql.injection.tmLanguage.json) highlights as SQL, and which
-// `' lang=<dialect>` marker to suggest for a statement. The statement rules here must
-// match the grammar's. No vscode imports.
+// SQL in VB strings (ADR 0010): which statements the grammar
+// (syntaxes/vb-sql.injection.tmLanguage.json) highlights as SQL, and which
+// `' lang=<dialect>` marker to suggest for a statement. Statements and markers are
+// vbstatement.ts's. The statement rules here must match the grammar's. No vscode imports.
+import { assignmentStart, Dialect, fragmentsOf, isDialect, markedEnd, markerOf, Statement, statementAt } from "./vbstatement";
 
-export type Dialect = "sql" | "tsql" | "mysql" | "pgsql";
+export type { Dialect };
 
 export const dialectNames: Record<Dialect, string> = { sql: "SQL", tsql: "T-SQL", mysql: "MySQL", pgsql: "PostgreSQL" };
 
-const aliases: Record<string, Dialect> = {
-  sql: "sql",
-  tsql: "tsql",
-  mssql: "tsql",
-  mysql: "mysql",
-  mariadb: "mysql",
-  pgsql: "pgsql",
-  postgres: "pgsql",
-  postgresql: "pgsql",
-};
-
-const markerPattern = /^([ \t]*'[ \t]*lang(?:uage)?[ \t]*=[ \t]*)(postgresql|postgres|pgsql|mariadb|mysql|mssql|tsql|sql)\b/i;
-const sqlCmdStart = /^[ \t]*SQLCmd\d*\b(?=[ \t]*=)/i;
-const assignmentStart = /^[ \t]*(?:Dim[ \t]+)?[A-Za-z_][\w.]*(?:\([^)]*\))?(?:[ \t]+As[ \t]+[\w.]+)?[ \t]*(?:=|&=|\+=)/i;
-const continuation = /[+&_,(=][ \t]*$/;
-
-export interface Marker {
-  dialect: Dialect;
-  /** Column range of the dialect word, e.g. `sql` in `' lang=sql`. */
-  start: number;
-  end: number;
-}
-
-/** The `' lang=<dialect>` marker on this line, if the line is one. */
-export function markerOf(line: string): Marker | undefined {
-  const m = markerPattern.exec(line);
-  if (!m) return undefined;
-  return { dialect: aliases[m[2].toLowerCase()], start: m[1].length, end: m[1].length + m[2].length };
-}
-
-interface Lexed {
-  /** The code with each string literal replaced by `""` and the comment removed. */
-  code: string;
-  /** Contents of the string literals, `""` unescaped. */
-  strings: string[];
-  hasComment: boolean;
-}
-
-function lex(line: string): Lexed {
-  let code = "";
-  const strings: string[] = [];
-  for (let i = 0; i < line.length; i++) {
-    const c = line[i];
-    if (c === '"') {
-      let s = "";
-      let j = i + 1;
-      for (; j < line.length; j++) {
-        if (line[j] !== '"') s += line[j];
-        else if (line[j + 1] === '"') { s += '"'; j++; }
-        else break;
-      }
-      strings.push(s);
-      code += '""';
-      i = j;
-    } else if (c === "'") {
-      return { code, strings, hasComment: true };
-    } else {
-      code += c;
-    }
-  }
-  return { code, strings, hasComment: false };
-}
-
-/** A comment ends a VB 10 statement; otherwise it continues past a trailing + & _ , ( =. */
-function endsStatement(line: string): boolean {
-  const l = lex(line);
-  return l.hasComment || !continuation.test(l.code);
-}
-
-export interface Statement {
-  /** First and last line, inclusive. */
-  start: number;
-  end: number;
-}
-
-/** The statement containing `line`. */
-export function statementAt(lines: readonly string[], line: number): Statement {
-  let start = line;
-  while (start > 0 && line - start < 200 && !endsStatement(lines[start - 1])) start--;
-  let end = line;
-  while (end < lines.length - 1 && !endsStatement(lines[end])) end++;
-  return { start, end };
-}
+export const sqlCmdStart = /^[ \t]*SQLCmd\d*\b(?=[ \t]*=)/i;
 
 export interface SqlRegion extends Statement {
   dialect: Dialect;
@@ -103,9 +22,10 @@ export function sqlRegions(lines: readonly string[]): SqlRegion[] {
   for (let i = 0; i < lines.length; i++) {
     const marker = markerOf(lines[i]);
     if (marker && i + 1 < lines.length) {
-      // The marker's own line counts as the region's start, as in the grammar; a blank next line ends it there.
-      const end = lines[i + 1].trim() === "" ? i + 1 : statementAt(lines, i + 1).end;
-      regions.push({ start: i, end, dialect: marker.dialect, marker: i });
+      // The marker's own line counts as the region's start, as in the grammar. Another
+      // language's marker claims the statement too (ADR 0011).
+      const end = markedEnd(lines, i);
+      if (isDialect(marker.language)) regions.push({ start: i, end, dialect: marker.language, marker: i });
       i = end;
     } else if (sqlCmdStart.test(lines[i])) {
       const end = statementAt(lines, i).end;
@@ -159,15 +79,14 @@ export function suggestMarker(lines: readonly string[], line: number): Suggestio
   if (line >= lines.length || markerOf(lines[line])) return [];
   const st = statementAt(lines, line);
   const first = lines[st.start];
-  const fragments: string[] = [];
-  for (let i = st.start; i <= st.end; i++) fragments.push(...lex(lines[i]).strings);
+  const fragments = fragmentsOf(lines, st);
   const found = dialectsIn(fragments.join(" "));
   const marker = st.start > 0 ? markerOf(lines[st.start - 1]) : undefined;
   const indent = /^[ \t]*/.exec(first)![0];
 
   let dialects: Dialect[];
   if (marker) {
-    if (marker.dialect !== "sql") return [];
+    if (marker.language !== "sql") return [];
     dialects = found;
   } else if (sqlCmdStart.test(first)) {
     dialects = found;

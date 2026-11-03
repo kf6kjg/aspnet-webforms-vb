@@ -1,24 +1,32 @@
 {
-  "$comment": "SQL in VB string literals (ADR 0010). A statement starting a line with `SQLCmd =` is SQL (generic dialect) through the end of the statement; a comment line `' lang=<dialect>` marks the statement below it. A statement ends at a comment or at a line whose last character isn't a continuation token (+ & _ , ( =), which is exact for VB 10. SQL coloring stays inside each string fragment, so the VB string always closes. The marked rules come first and the selector skips existing SQL regions, so a marker wins over the SQLCmd default.",
+  "$comment": "SQL in VB string literals (ADR 0010). A statement starting a line with `SQLCmd =` is SQL (generic dialect) through the end of the statement; a comment line `' lang=<dialect>` marks the statement below it. A statement ends at a comment or at a line whose last character isn't a continuation token (+ & _ , ( =), which is exact for VB 10. SQL coloring stays inside each string fragment, so the VB string always closes. The marked rules come first and the selector skips existing SQL regions, so a marker wins over the SQLCmd default. One ^ rule tests for every trigger and the statement rules hang off it at \\G, because each ^ rule costs a regex search on every scan (ADR 0011).",
   "scopeName": "source.vb.sql-injection",
-  "injectionSelector": "L:source.asp.vb.net -comment -string -meta.sql-statement.vb",
-  "patterns": [
-    { "include": "#marked-tsql" },
-    { "include": "#marked-mysql" },
-    { "include": "#marked-pgsql" },
-    { "include": "#marked-sql" },
-    { "include": "#sqlcmd-statement" }
-  ],
+  "injectionSelector": "L:source.asp.vb.net -comment -string -meta.string-language.vb -meta.sql-statement.vb -meta.html-statement.vb -meta.javascript-statement.vb -meta.css-statement.vb -meta.xml-statement.vb -meta.json-statement.vb",
+  "patterns": [{ "include": "#statement" }],
   "repository": {
+    "statement": {
+      "$comment": "Zero-width at the start of a line whose statement one of these rules claims; it ends as soon as that rule's region does.",
+      "begin": "(?i)^(?=[ \\t]*(?:SQLCmd\\d*\\b[ \\t]*=|'[ \\t]*lang(?:uage)?[ \\t]*=[ \\t]*(?:sql|tsql|mssql|mysql|mariadb|pgsql|postgresql|postgres)\\b))",
+      "end": "(?!\\G)",
+      "name": "meta.string-language.vb",
+      "patterns": [
+        { "include": "#marked-tsql" },
+        { "include": "#marked-mysql" },
+        { "include": "#marked-pgsql" },
+        { "include": "#marked-sql" },
+        { "include": "#sqlcmd-statement" },
+        { "include": "source.asp.vb.net" }
+      ]
+    },
     "sqlcmd-statement": {
-      "begin": "(?i)^[ \\t]*(SQLCmd\\d*)\\b(?=[ \\t]*=)",
+      "begin": "(?i)\\G[ \\t]*(SQLCmd\\d*)\\b(?=[ \\t]*=)",
       "beginCaptures": { "1": { "name": "variable.other.asp" } },
       "end": "(?<![+&_,(=\\s])[ \\t]*$|(?=')",
       "name": "meta.sql-statement.vb",
       "patterns": [{ "include": "#body-sql" }]
     },
     "marked-sql": {
-      "begin": "(?i)^[ \\t]*((')[ \\t]*(lang(?:uage)?[ \\t]*=[ \\t]*sql)\\b.*)\\n",
+      "begin": "(?i)\\G[ \\t]*((')[ \\t]*(lang(?:uage)?[ \\t]*=[ \\t]*sql)\\b.*)\\n",
       "beginCaptures": {
         "1": { "name": "comment.line.apostrophe.asp" },
         "2": { "name": "punctuation.definition.comment.asp" },
@@ -29,7 +37,7 @@
       "patterns": [{ "include": "#body-sql" }]
     },
     "marked-tsql": {
-      "begin": "(?i)^[ \\t]*((')[ \\t]*(lang(?:uage)?[ \\t]*=[ \\t]*(?:tsql|mssql))\\b.*)\\n",
+      "begin": "(?i)\\G[ \\t]*((')[ \\t]*(lang(?:uage)?[ \\t]*=[ \\t]*(?:tsql|mssql))\\b.*)\\n",
       "beginCaptures": {
         "1": { "name": "comment.line.apostrophe.asp" },
         "2": { "name": "punctuation.definition.comment.asp" },
@@ -40,7 +48,7 @@
       "patterns": [{ "include": "#body-tsql" }]
     },
     "marked-mysql": {
-      "begin": "(?i)^[ \\t]*((')[ \\t]*(lang(?:uage)?[ \\t]*=[ \\t]*(?:mysql|mariadb))\\b.*)\\n",
+      "begin": "(?i)\\G[ \\t]*((')[ \\t]*(lang(?:uage)?[ \\t]*=[ \\t]*(?:mysql|mariadb))\\b.*)\\n",
       "beginCaptures": {
         "1": { "name": "comment.line.apostrophe.asp" },
         "2": { "name": "punctuation.definition.comment.asp" },
@@ -51,7 +59,7 @@
       "patterns": [{ "include": "#body-mysql" }]
     },
     "marked-pgsql": {
-      "begin": "(?i)^[ \\t]*((')[ \\t]*(lang(?:uage)?[ \\t]*=[ \\t]*(?:pgsql|postgresql|postgres))\\b.*)\\n",
+      "begin": "(?i)\\G[ \\t]*((')[ \\t]*(lang(?:uage)?[ \\t]*=[ \\t]*(?:pgsql|postgresql|postgres))\\b.*)\\n",
       "beginCaptures": {
         "1": { "name": "comment.line.apostrophe.asp" },
         "2": { "name": "punctuation.definition.comment.asp" },

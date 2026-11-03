@@ -1,0 +1,1157 @@
+{
+  "$comment": "HTML, JavaScript, CSS, XML and JSON in VB string literals (ADR 0011), alongside the SQL injection (ADR 0010). Highlighted without a marker: a statement assigning to a name containing html (HTML); the second argument of X.Attributes.Add(\"on\u2026\", \u2026) and of a menu helper's AddItem(\"L\", \u2026), and the right side of X.Attributes(\"on\u2026\") = \u2026 (JavaScript); the same for \"style\" (CSS). A comment line `' lang=<language>` marks the statement below it. A statement ends as in ADR 0010. Coloring stays inside each string fragment, so the VB string always closes.",
+  "scopeName": "source.vb.web-injection",
+  "injectionSelector": "L:source.asp.vb.net -comment -string -meta.string-language.vb -meta.sql-statement.vb -meta.html-statement.vb -meta.javascript-statement.vb -meta.css-statement.vb -meta.xml-statement.vb -meta.json-statement.vb",
+  "patterns": [
+    {
+      "include": "#statement"
+    }
+  ],
+  "repository": {
+    "marked-html": {
+      "begin": "(?i)\\G[ \\t]*((')[ \\t]*(lang(?:uage)?[ \\t]*=[ \\t]*(?:html))\\b.*)\\n",
+      "beginCaptures": {
+        "1": {
+          "name": "comment.line.apostrophe.asp"
+        },
+        "2": {
+          "name": "punctuation.definition.comment.asp"
+        },
+        "3": {
+          "name": "keyword.other.language-marker.vb"
+        }
+      },
+      "end": "(?<![+&_,(=\\s])[ \\t]*$|(?=')",
+      "name": "meta.html-statement.vb",
+      "patterns": [
+        {
+          "include": "#body-html"
+        }
+      ]
+    },
+    "body-html": {
+      "patterns": [
+        {
+          "include": "#brackets-html"
+        },
+        {
+          "include": "#string-html"
+        },
+        {
+          "include": "source.asp.vb.net"
+        }
+      ]
+    },
+    "brackets-html": {
+      "$comment": "Strings inside parentheses (IIf, Replace, Response.Write, \u2026) belong to the statement too.",
+      "begin": "\\(",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.section.round-brackets.begin.asp"
+        }
+      },
+      "end": "\\)",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.section.round-brackets.end.asp"
+        }
+      },
+      "name": "meta.round-brackets",
+      "patterns": [
+        {
+          "include": "#body-html"
+        }
+      ]
+    },
+    "string-html": {
+      "begin": "\"",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.begin.asp"
+        }
+      },
+      "end": "\"(?!\")|$",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.end.asp"
+        }
+      },
+      "name": "string.quoted.double.asp",
+      "contentName": "meta.html-fragment.vb",
+      "patterns": [
+        {
+          "include": "#html-content"
+        }
+      ]
+    },
+    "marked-js": {
+      "begin": "(?i)\\G[ \\t]*((')[ \\t]*(lang(?:uage)?[ \\t]*=[ \\t]*(?:js|javascript))\\b.*)\\n",
+      "beginCaptures": {
+        "1": {
+          "name": "comment.line.apostrophe.asp"
+        },
+        "2": {
+          "name": "punctuation.definition.comment.asp"
+        },
+        "3": {
+          "name": "keyword.other.language-marker.vb"
+        }
+      },
+      "end": "(?<![+&_,(=\\s])[ \\t]*$|(?=')",
+      "name": "meta.javascript-statement.vb",
+      "patterns": [
+        {
+          "include": "#body-js"
+        }
+      ]
+    },
+    "body-js": {
+      "patterns": [
+        {
+          "include": "#brackets-js"
+        },
+        {
+          "include": "#string-js"
+        },
+        {
+          "include": "source.asp.vb.net"
+        }
+      ]
+    },
+    "brackets-js": {
+      "$comment": "Strings inside parentheses (IIf, Replace, Response.Write, \u2026) belong to the statement too.",
+      "begin": "\\(",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.section.round-brackets.begin.asp"
+        }
+      },
+      "end": "\\)",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.section.round-brackets.end.asp"
+        }
+      },
+      "name": "meta.round-brackets",
+      "patterns": [
+        {
+          "include": "#body-js"
+        }
+      ]
+    },
+    "string-js": {
+      "begin": "\"",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.begin.asp"
+        }
+      },
+      "end": "\"(?!\")|$",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.end.asp"
+        }
+      },
+      "name": "string.quoted.double.asp",
+      "contentName": "meta.javascript-fragment.vb",
+      "patterns": [
+        {
+          "include": "#js-content"
+        }
+      ]
+    },
+    "marked-css": {
+      "begin": "(?i)\\G[ \\t]*((')[ \\t]*(lang(?:uage)?[ \\t]*=[ \\t]*(?:css))\\b.*)\\n",
+      "beginCaptures": {
+        "1": {
+          "name": "comment.line.apostrophe.asp"
+        },
+        "2": {
+          "name": "punctuation.definition.comment.asp"
+        },
+        "3": {
+          "name": "keyword.other.language-marker.vb"
+        }
+      },
+      "end": "(?<![+&_,(=\\s])[ \\t]*$|(?=')",
+      "name": "meta.css-statement.vb",
+      "patterns": [
+        {
+          "include": "#body-css"
+        }
+      ]
+    },
+    "body-css": {
+      "patterns": [
+        {
+          "include": "#brackets-css"
+        },
+        {
+          "include": "#string-css"
+        },
+        {
+          "include": "source.asp.vb.net"
+        }
+      ]
+    },
+    "brackets-css": {
+      "$comment": "Strings inside parentheses (IIf, Replace, Response.Write, \u2026) belong to the statement too.",
+      "begin": "\\(",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.section.round-brackets.begin.asp"
+        }
+      },
+      "end": "\\)",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.section.round-brackets.end.asp"
+        }
+      },
+      "name": "meta.round-brackets",
+      "patterns": [
+        {
+          "include": "#body-css"
+        }
+      ]
+    },
+    "string-css": {
+      "begin": "\"",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.begin.asp"
+        }
+      },
+      "end": "\"(?!\")|$",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.end.asp"
+        }
+      },
+      "name": "string.quoted.double.asp",
+      "contentName": "meta.css-fragment.vb",
+      "patterns": [
+        {
+          "include": "#css-content"
+        }
+      ]
+    },
+    "marked-xml": {
+      "begin": "(?i)\\G[ \\t]*((')[ \\t]*(lang(?:uage)?[ \\t]*=[ \\t]*(?:xml))\\b.*)\\n",
+      "beginCaptures": {
+        "1": {
+          "name": "comment.line.apostrophe.asp"
+        },
+        "2": {
+          "name": "punctuation.definition.comment.asp"
+        },
+        "3": {
+          "name": "keyword.other.language-marker.vb"
+        }
+      },
+      "end": "(?<![+&_,(=\\s])[ \\t]*$|(?=')",
+      "name": "meta.xml-statement.vb",
+      "patterns": [
+        {
+          "include": "#body-xml"
+        }
+      ]
+    },
+    "body-xml": {
+      "patterns": [
+        {
+          "include": "#brackets-xml"
+        },
+        {
+          "include": "#string-xml"
+        },
+        {
+          "include": "source.asp.vb.net"
+        }
+      ]
+    },
+    "brackets-xml": {
+      "$comment": "Strings inside parentheses (IIf, Replace, Response.Write, \u2026) belong to the statement too.",
+      "begin": "\\(",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.section.round-brackets.begin.asp"
+        }
+      },
+      "end": "\\)",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.section.round-brackets.end.asp"
+        }
+      },
+      "name": "meta.round-brackets",
+      "patterns": [
+        {
+          "include": "#body-xml"
+        }
+      ]
+    },
+    "string-xml": {
+      "begin": "\"",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.begin.asp"
+        }
+      },
+      "end": "\"(?!\")|$",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.end.asp"
+        }
+      },
+      "name": "string.quoted.double.asp",
+      "contentName": "meta.xml-fragment.vb",
+      "patterns": [
+        {
+          "include": "#xml-content"
+        }
+      ]
+    },
+    "marked-json": {
+      "begin": "(?i)\\G[ \\t]*((')[ \\t]*(lang(?:uage)?[ \\t]*=[ \\t]*(?:json))\\b.*)\\n",
+      "beginCaptures": {
+        "1": {
+          "name": "comment.line.apostrophe.asp"
+        },
+        "2": {
+          "name": "punctuation.definition.comment.asp"
+        },
+        "3": {
+          "name": "keyword.other.language-marker.vb"
+        }
+      },
+      "end": "(?<![+&_,(=\\s])[ \\t]*$|(?=')",
+      "name": "meta.json-statement.vb",
+      "patterns": [
+        {
+          "include": "#body-json"
+        }
+      ]
+    },
+    "body-json": {
+      "patterns": [
+        {
+          "include": "#brackets-json"
+        },
+        {
+          "include": "#string-json"
+        },
+        {
+          "include": "source.asp.vb.net"
+        }
+      ]
+    },
+    "brackets-json": {
+      "$comment": "Strings inside parentheses (IIf, Replace, Response.Write, \u2026) belong to the statement too.",
+      "begin": "\\(",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.section.round-brackets.begin.asp"
+        }
+      },
+      "end": "\\)",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.section.round-brackets.end.asp"
+        }
+      },
+      "name": "meta.round-brackets",
+      "patterns": [
+        {
+          "include": "#body-json"
+        }
+      ]
+    },
+    "string-json": {
+      "begin": "\"",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.begin.asp"
+        }
+      },
+      "end": "\"(?!\")|$",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.end.asp"
+        }
+      },
+      "name": "string.quoted.double.asp",
+      "contentName": "meta.json-fragment.vb",
+      "patterns": [
+        {
+          "include": "#json-content"
+        }
+      ]
+    },
+    "html-statement": {
+      "$comment": "A statement assigning to a name with html in it (tHtmlOut, OutHtml, X.InnerHtml, the typo tHMTLOut).",
+      "begin": "(?i)\\G(?=[ \\t]*(?:\\w+\\.)*\\w*(?:html|hmtl)\\w*[ \\t]*[&+]?=)",
+      "end": "(?<![+&_,(=\\s])[ \\t]*$|(?=')",
+      "name": "meta.html-statement.vb",
+      "patterns": [
+        {
+          "include": "#body-html"
+        }
+      ]
+    },
+    "js-attribute-add": {
+      "begin": "(?i)\\G(?=[ \\t]*(?:\\w+\\.)*Attributes\\.Add[ \\t]*\\([ \\t]*\\\"on[a-z]+\\\"[ \\t]*,)",
+      "end": "(?<![+&_,(=\\s])[ \\t]*$|(?=')",
+      "name": "meta.javascript-statement.vb",
+      "patterns": [
+        {
+          "include": "#js-arguments"
+        },
+        {
+          "include": "source.asp.vb.net"
+        }
+      ]
+    },
+    "js-attribute-set": {
+      "begin": "(?i)\\G(?=[ \\t]*(?:\\w+\\.)*Attributes(?:\\.Item)?[ \\t]*\\([ \\t]*\\\"on[a-z]+\\\"[ \\t]*\\)[ \\t]*=)",
+      "end": "(?<![+&_,(=\\s])[ \\t]*$|(?=')",
+      "name": "meta.javascript-statement.vb",
+      "patterns": [
+        {
+          "include": "#string-js"
+        },
+        {
+          "include": "source.asp.vb.net"
+        }
+      ]
+    },
+    "js-menu-item": {
+      "begin": "(?i)\\G(?=[ \\t]*(?:\\w+\\.)*AddItem[ \\t]*\\([ \\t]*\\\"L\\\"[ \\t]*,)",
+      "end": "(?<![+&_,(=\\s])[ \\t]*$|(?=')",
+      "name": "meta.javascript-statement.vb",
+      "patterns": [
+        {
+          "include": "#js-arguments"
+        },
+        {
+          "include": "source.asp.vb.net"
+        }
+      ],
+      "$comment": "SBMenu / TabNav / TreeView .AddItem(\"L\", \"<script>\", title): their menu helpers run an \"L\" entry's second argument as JavaScript."
+    },
+    "js-arguments": {
+      "begin": "(?i)(?<=\\bAdd|\\bAddItem)[ \\t]*(\\()(?=[ \\t]*\\\"(?:on[a-z]+|L)\\\"[ \\t]*,)",
+      "beginCaptures": {
+        "1": {
+          "name": "punctuation.section.round-brackets.begin.asp"
+        }
+      },
+      "end": "\\)",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.section.round-brackets.end.asp"
+        }
+      },
+      "name": "meta.round-brackets",
+      "patterns": [
+        {
+          "$comment": "The first argument stays a VB string; the language runs to the next top-level comma or ).",
+          "begin": "(?i)\\G[ \\t]*((\\\")(?:on[a-z]+|L)(\\\"))[ \\t]*,",
+          "beginCaptures": {
+            "1": {
+              "name": "string.quoted.double.asp"
+            },
+            "2": {
+              "name": "punctuation.definition.string.begin.asp"
+            },
+            "3": {
+              "name": "punctuation.definition.string.end.asp"
+            }
+          },
+          "end": "(?=[,)])",
+          "patterns": [
+            {
+              "include": "#body-js"
+            }
+          ]
+        },
+        {
+          "include": "source.asp.vb.net"
+        }
+      ]
+    },
+    "css-attribute-add": {
+      "begin": "(?i)\\G(?=[ \\t]*(?:\\w+\\.)*Attributes\\.Add[ \\t]*\\([ \\t]*\\\"style\\\"[ \\t]*,)",
+      "end": "(?<![+&_,(=\\s])[ \\t]*$|(?=')",
+      "name": "meta.css-statement.vb",
+      "patterns": [
+        {
+          "include": "#css-arguments"
+        },
+        {
+          "include": "source.asp.vb.net"
+        }
+      ]
+    },
+    "css-attribute-set": {
+      "begin": "(?i)\\G(?=[ \\t]*(?:\\w+\\.)*Attributes(?:\\.Item)?[ \\t]*\\([ \\t]*\\\"style\\\"[ \\t]*\\)[ \\t]*=)",
+      "end": "(?<![+&_,(=\\s])[ \\t]*$|(?=')",
+      "name": "meta.css-statement.vb",
+      "patterns": [
+        {
+          "include": "#string-css"
+        },
+        {
+          "include": "source.asp.vb.net"
+        }
+      ]
+    },
+    "css-arguments": {
+      "begin": "(?i)(?<=\\bAdd)[ \\t]*(\\()(?=[ \\t]*\\\"style\\\"[ \\t]*,)",
+      "beginCaptures": {
+        "1": {
+          "name": "punctuation.section.round-brackets.begin.asp"
+        }
+      },
+      "end": "\\)",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.section.round-brackets.end.asp"
+        }
+      },
+      "name": "meta.round-brackets",
+      "patterns": [
+        {
+          "$comment": "The first argument stays a VB string; the language runs to the next top-level comma or ).",
+          "begin": "(?i)\\G[ \\t]*((\\\")style(\\\"))[ \\t]*,",
+          "beginCaptures": {
+            "1": {
+              "name": "string.quoted.double.asp"
+            },
+            "2": {
+              "name": "punctuation.definition.string.begin.asp"
+            },
+            "3": {
+              "name": "punctuation.definition.string.end.asp"
+            }
+          },
+          "end": "(?=[,)])",
+          "patterns": [
+            {
+              "include": "#body-css"
+            }
+          ]
+        },
+        {
+          "include": "source.asp.vb.net"
+        }
+      ]
+    },
+    "html-content": {
+      "patterns": [
+        {
+          "include": "#html-comment"
+        },
+        {
+          "begin": "(?i)(<!)(DOCTYPE)\\b",
+          "beginCaptures": {
+            "1": {
+              "name": "punctuation.definition.tag.begin.html"
+            },
+            "2": {
+              "name": "entity.name.tag.html"
+            }
+          },
+          "end": "(>)|(?=\\\"(?!\\\")|$)",
+          "endCaptures": {
+            "1": {
+              "name": "punctuation.definition.tag.end.html"
+            }
+          },
+          "name": "meta.tag.metadata.doctype.html",
+          "patterns": [
+            {
+              "match": "\"\"[^\"]*\"\"",
+              "name": "string.quoted.double.html"
+            },
+            {
+              "match": "\"\"",
+              "name": "constant.character.escape.apostrophe.asp"
+            }
+          ]
+        },
+        {
+          "begin": "(</?)([A-Za-z][\\w:-]*)(?=[\\s/>\\\"]|$)",
+          "beginCaptures": {
+            "1": {
+              "name": "punctuation.definition.tag.begin.html"
+            },
+            "2": {
+              "name": "entity.name.tag.html"
+            }
+          },
+          "end": "(/?>)|(?=\\\"(?!\\\")|$)",
+          "endCaptures": {
+            "1": {
+              "name": "punctuation.definition.tag.end.html"
+            }
+          },
+          "name": "meta.tag.html",
+          "patterns": [
+            {
+              "include": "#html-attributes"
+            }
+          ]
+        },
+        {
+          "$comment": "A fragment that continues a tag begun in an earlier fragment: ` class=\u2026`, `>`, or `\"\" \u2026` closing a value.",
+          "begin": "\\G(?=[ \\t]+[A-Za-z_:][\\w:.-]*[ \\t]*=|[ \\t]*/?>|\\\"\\\"[ \\t/>])",
+          "end": "(/?>)|(?=\\\"(?!\\\")|$)",
+          "endCaptures": {
+            "1": {
+              "name": "punctuation.definition.tag.end.html"
+            }
+          },
+          "name": "meta.tag.html",
+          "patterns": [
+            {
+              "include": "#html-attributes"
+            }
+          ]
+        },
+        {
+          "match": "&(?:[A-Za-z][A-Za-z0-9]*|#[0-9]+|#[xX][0-9A-Fa-f]+);",
+          "name": "constant.character.entity.html"
+        },
+        {
+          "match": "\"\"",
+          "name": "constant.character.escape.apostrophe.asp"
+        }
+      ]
+    },
+    "html-comment": {
+      "begin": "<!--",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.comment.html"
+        }
+      },
+      "end": "(-->)|(?=\\\"(?!\\\")|$)",
+      "endCaptures": {
+        "1": {
+          "name": "punctuation.definition.comment.html"
+        }
+      },
+      "name": "comment.block.html",
+      "patterns": [
+        {
+          "match": "\"\"",
+          "name": "constant.character.escape.apostrophe.asp"
+        }
+      ]
+    },
+    "html-attributes": {
+      "patterns": [
+        {
+          "begin": "(?i)(?<![\\w:.-])(style)[ \\t]*(=)[ \\t]*(\\\"\\\"|')",
+          "beginCaptures": {
+            "1": {
+              "name": "entity.other.attribute-name.html"
+            },
+            "2": {
+              "name": "punctuation.separator.key-value.html"
+            },
+            "3": {
+              "name": "punctuation.definition.string.begin.html"
+            }
+          },
+          "end": "(\\3)|(?=\\\"(?!\\\")|$)",
+          "endCaptures": {
+            "1": {
+              "name": "punctuation.definition.string.end.html"
+            }
+          },
+          "name": "meta.attribute.style.html",
+          "patterns": [
+            {
+              "include": "#css-content"
+            }
+          ]
+        },
+        {
+          "begin": "(?i)(?<![\\w:.-])(on[a-z]+)[ \\t]*(=)[ \\t]*(\\\"\\\"|')",
+          "beginCaptures": {
+            "1": {
+              "name": "entity.other.attribute-name.html"
+            },
+            "2": {
+              "name": "punctuation.separator.key-value.html"
+            },
+            "3": {
+              "name": "punctuation.definition.string.begin.html"
+            }
+          },
+          "end": "(\\3)|(?=\\\"(?!\\\")|$)",
+          "endCaptures": {
+            "1": {
+              "name": "punctuation.definition.string.end.html"
+            }
+          },
+          "name": "meta.attribute.event-handler.html",
+          "patterns": [
+            {
+              "include": "#js-content"
+            }
+          ]
+        },
+        {
+          "match": "(=)[ \\t]*(\"\"[^\"]*\"\")",
+          "captures": {
+            "1": {
+              "name": "punctuation.separator.key-value.html"
+            },
+            "2": {
+              "name": "string.quoted.double.html"
+            }
+          }
+        },
+        {
+          "match": "(=)[ \\t]*('[^'\\\"]*')",
+          "captures": {
+            "1": {
+              "name": "punctuation.separator.key-value.html"
+            },
+            "2": {
+              "name": "string.quoted.single.html"
+            }
+          }
+        },
+        {
+          "match": "(=)[ \\t]*([^\\s\\\"'>=]+)",
+          "captures": {
+            "1": {
+              "name": "punctuation.separator.key-value.html"
+            },
+            "2": {
+              "name": "string.unquoted.html"
+            }
+          }
+        },
+        {
+          "match": "=",
+          "name": "punctuation.separator.key-value.html"
+        },
+        {
+          "match": "(?<![\\w:.-])[A-Za-z_:@][\\w:.-]*",
+          "name": "entity.other.attribute-name.html"
+        },
+        {
+          "match": "\"\"",
+          "name": "constant.character.escape.apostrophe.asp"
+        }
+      ]
+    },
+    "css-content": {
+      "patterns": [
+        {
+          "begin": "/\\*",
+          "end": "\\*/|(?=\\\"(?!\\\")|$)",
+          "name": "comment.block.css",
+          "patterns": [
+            {
+              "match": "\"\"",
+              "name": "constant.character.escape.apostrophe.asp"
+            }
+          ]
+        },
+        {
+          "match": "!\\s*important\\b",
+          "name": "keyword.other.important.css"
+        },
+        {
+          "match": "(?i)\\b(url)(\\()([^)\\\"]*)(\\))?",
+          "captures": {
+            "1": {
+              "name": "support.function.url.css"
+            },
+            "2": {
+              "name": "punctuation.section.function.begin.bracket.round.css"
+            },
+            "3": {
+              "name": "variable.parameter.url.css"
+            },
+            "4": {
+              "name": "punctuation.section.function.end.bracket.round.css"
+            }
+          }
+        },
+        {
+          "match": "(?<![\\w-])([A-Za-z-]+)[ \\t]*(:)",
+          "captures": {
+            "1": {
+              "name": "support.type.property-name.css"
+            },
+            "2": {
+              "name": "punctuation.separator.key-value.css"
+            }
+          }
+        },
+        {
+          "match": "(?<![\\w-])[A-Za-z-]+(?=\\()",
+          "name": "support.function.misc.css"
+        },
+        {
+          "match": "#[0-9A-Fa-f]{3,8}\\b",
+          "name": "constant.other.color.rgb-value.hex.css"
+        },
+        {
+          "match": "(?<![\\w#.-])(-?(?:\\d+(?:\\.\\d+)?|\\.\\d+))(px|em|rem|ex|pt|pc|cm|mm|in|vh|vw|deg|ms|s|%)?(?![\\w-])",
+          "captures": {
+            "1": {
+              "name": "constant.numeric.css"
+            },
+            "2": {
+              "name": "keyword.other.unit.css"
+            }
+          }
+        },
+        {
+          "match": ";",
+          "name": "punctuation.terminator.rule.css"
+        },
+        {
+          "match": ",",
+          "name": "punctuation.separator.list.comma.css"
+        },
+        {
+          "match": "(?<![\\w-])[A-Za-z-]+(?![\\w-])",
+          "name": "support.constant.property-value.css"
+        },
+        {
+          "match": "\"\"",
+          "name": "constant.character.escape.apostrophe.asp"
+        }
+      ]
+    },
+    "js-content": {
+      "patterns": [
+        {
+          "match": "//[^\"]*",
+          "name": "comment.line.double-slash.js"
+        },
+        {
+          "match": "/\\*(?:[^*\"]|\\*(?!/))*(?:\\*/)?",
+          "name": "comment.block.js"
+        },
+        {
+          "match": "\"\"(?:[^\"\\\\]|\\\\.)*\"\"",
+          "name": "string.quoted.double.js"
+        },
+        {
+          "match": "'(?:[^'\\\\\\\"]|\\\\.)*'",
+          "name": "string.quoted.single.js"
+        },
+        {
+          "match": "\\b(?:var|let|const|function)\\b",
+          "name": "storage.type.js"
+        },
+        {
+          "match": "\\b(?:if|else|for|while|do|switch|case|default|break|continue|return|try|catch|finally|throw)\\b",
+          "name": "keyword.control.js"
+        },
+        {
+          "match": "\\bnew\\b",
+          "name": "keyword.operator.new.js"
+        },
+        {
+          "match": "\\b(?:typeof|instanceof|delete|void|in)\\b",
+          "name": "keyword.operator.expression.js"
+        },
+        {
+          "match": "\\bthis\\b",
+          "name": "variable.language.this.js"
+        },
+        {
+          "match": "\\b(?:true|false)\\b",
+          "name": "constant.language.boolean.js"
+        },
+        {
+          "match": "\\b(?:null|undefined|NaN)\\b",
+          "name": "constant.language.null.js"
+        },
+        {
+          "match": "[A-Za-z_$][\\w$]*(?=[ \\t]*\\()",
+          "name": "entity.name.function.js"
+        },
+        {
+          "match": "(?<![\\w$.])\\d+(?:\\.\\d+)?\\b",
+          "name": "constant.numeric.decimal.js"
+        },
+        {
+          "match": "\"\"",
+          "name": "constant.character.escape.apostrophe.asp"
+        }
+      ]
+    },
+    "xml-content": {
+      "patterns": [
+        {
+          "begin": "<!--",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.definition.comment.xml"
+            }
+          },
+          "end": "(-->)|(?=\\\"(?!\\\")|$)",
+          "endCaptures": {
+            "1": {
+              "name": "punctuation.definition.comment.xml"
+            }
+          },
+          "name": "comment.block.xml",
+          "patterns": [
+            {
+              "match": "\"\"",
+              "name": "constant.character.escape.apostrophe.asp"
+            }
+          ]
+        },
+        {
+          "begin": "<!\\[CDATA\\[",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.definition.string.begin.xml"
+            }
+          },
+          "end": "(\\]\\]>)|(?=\\\"(?!\\\")|$)",
+          "endCaptures": {
+            "1": {
+              "name": "punctuation.definition.string.end.xml"
+            }
+          },
+          "name": "string.unquoted.cdata.xml",
+          "patterns": [
+            {
+              "match": "\"\"",
+              "name": "constant.character.escape.apostrophe.asp"
+            }
+          ]
+        },
+        {
+          "begin": "(<\\?)([\\w.:-]+)",
+          "beginCaptures": {
+            "1": {
+              "name": "punctuation.definition.tag.xml"
+            },
+            "2": {
+              "name": "entity.name.tag.xml"
+            }
+          },
+          "end": "(\\?>)|(?=\\\"(?!\\\")|$)",
+          "endCaptures": {
+            "1": {
+              "name": "punctuation.definition.tag.xml"
+            }
+          },
+          "name": "meta.tag.preprocessor.xml",
+          "patterns": [
+            {
+              "include": "#xml-attributes"
+            }
+          ]
+        },
+        {
+          "begin": "(</?)(?:([\\w.-]+)(:))?([\\w.-]+)(?=[\\s/>\\\"]|$)",
+          "beginCaptures": {
+            "1": {
+              "name": "punctuation.definition.tag.xml"
+            },
+            "2": {
+              "name": "entity.name.tag.namespace.xml"
+            },
+            "3": {
+              "name": "punctuation.separator.namespace.xml"
+            },
+            "4": {
+              "name": "entity.name.tag.localname.xml"
+            }
+          },
+          "end": "(/?>)|(?=\\\"(?!\\\")|$)",
+          "endCaptures": {
+            "1": {
+              "name": "punctuation.definition.tag.xml"
+            }
+          },
+          "name": "meta.tag.xml",
+          "patterns": [
+            {
+              "include": "#xml-attributes"
+            }
+          ]
+        },
+        {
+          "begin": "\\G(?=[ \\t]+[\\w.:-]+[ \\t]*=|[ \\t]*/?>|\\\"\\\"[ \\t/>])",
+          "end": "(/?>)|(?=\\\"(?!\\\")|$)",
+          "endCaptures": {
+            "1": {
+              "name": "punctuation.definition.tag.xml"
+            }
+          },
+          "name": "meta.tag.xml",
+          "patterns": [
+            {
+              "include": "#xml-attributes"
+            }
+          ]
+        },
+        {
+          "match": "&(?:[A-Za-z_][\\w.-]*|#[0-9]+|#x[0-9A-Fa-f]+);",
+          "name": "constant.character.entity.xml"
+        },
+        {
+          "match": "\"\"",
+          "name": "constant.character.escape.apostrophe.asp"
+        }
+      ]
+    },
+    "xml-attributes": {
+      "patterns": [
+        {
+          "match": "(=)[ \\t]*(\"\"[^\"]*\"\")",
+          "captures": {
+            "1": {
+              "name": "punctuation.separator.key-value.xml"
+            },
+            "2": {
+              "name": "string.quoted.double.xml"
+            }
+          }
+        },
+        {
+          "match": "(=)[ \\t]*('[^'\\\"]*')",
+          "captures": {
+            "1": {
+              "name": "punctuation.separator.key-value.xml"
+            },
+            "2": {
+              "name": "string.quoted.single.xml"
+            }
+          }
+        },
+        {
+          "match": "=",
+          "name": "punctuation.separator.key-value.xml"
+        },
+        {
+          "match": "(?<![\\w:.-])(?:([\\w.-]+)(:))?([\\w.-]+)",
+          "captures": {
+            "1": {
+              "name": "entity.other.attribute-name.namespace.xml"
+            },
+            "2": {
+              "name": "punctuation.separator.namespace.xml"
+            },
+            "3": {
+              "name": "entity.other.attribute-name.localname.xml"
+            }
+          }
+        },
+        {
+          "match": "\"\"",
+          "name": "constant.character.escape.apostrophe.asp"
+        }
+      ]
+    },
+    "json-content": {
+      "patterns": [
+        {
+          "match": "(\"\"(?:[^\"\\\\]|\\\\.)*\"\")[ \\t]*(:)",
+          "captures": {
+            "1": {
+              "name": "support.type.property-name.json"
+            },
+            "2": {
+              "name": "punctuation.separator.dictionary.key-value.json"
+            }
+          }
+        },
+        {
+          "match": "\"\"(?:[^\"\\\\]|\\\\.)*\"\"",
+          "name": "string.quoted.double.json"
+        },
+        {
+          "match": "(?<![\\w.])-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?(?![\\w.])",
+          "name": "constant.numeric.json"
+        },
+        {
+          "match": "\\b(?:true|false|null)\\b",
+          "name": "constant.language.json"
+        },
+        {
+          "match": "[{}]",
+          "name": "punctuation.definition.dictionary.json"
+        },
+        {
+          "match": "[\\[\\]]",
+          "name": "punctuation.definition.array.json"
+        },
+        {
+          "match": ":",
+          "name": "punctuation.separator.dictionary.key-value.json"
+        },
+        {
+          "match": ",",
+          "name": "punctuation.separator.json"
+        },
+        {
+          "match": "\"\"",
+          "name": "constant.character.escape.apostrophe.asp"
+        }
+      ]
+    },
+    "statement": {
+      "$comment": "Zero-width at the start of a line whose statement one of these rules claims; it ends as soon as that rule's region does.",
+      "begin": "(?i)^(?=[ \\t]*'[ \\t]*lang(?:uage)?[ \\t]*=[ \\t]*(?:html|js|javascript|css|xml|json)\\b|[ \\t]*(?:\\w+\\.)*\\w*(?:html|hmtl)\\w*[ \\t]*[&+]?=|[ \\t]*(?:\\w+\\.)*(?:Attributes(?:\\.Add[ \\t]*\\([ \\t]*\\\"(?:on[a-z]+|style)\\\"[ \\t]*,|(?:\\.Item)?[ \\t]*\\([ \\t]*\\\"(?:on[a-z]+|style)\\\"[ \\t]*\\)[ \\t]*=)|AddItem[ \\t]*\\([ \\t]*\\\"L\\\"[ \\t]*,))",
+      "end": "(?!\\G)",
+      "name": "meta.string-language.vb",
+      "patterns": [
+        {
+          "include": "#marked-html"
+        },
+        {
+          "include": "#marked-js"
+        },
+        {
+          "include": "#marked-css"
+        },
+        {
+          "include": "#marked-xml"
+        },
+        {
+          "include": "#marked-json"
+        },
+        {
+          "include": "#html-statement"
+        },
+        {
+          "include": "#js-attribute-add"
+        },
+        {
+          "include": "#js-attribute-set"
+        },
+        {
+          "include": "#js-menu-item"
+        },
+        {
+          "include": "#css-attribute-add"
+        },
+        {
+          "include": "#css-attribute-set"
+        },
+        {
+          "include": "source.asp.vb.net"
+        }
+      ]
+    }
+  }
+}
