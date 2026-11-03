@@ -1,0 +1,13 @@
+<%@ Master Language="VB" CodeFile="Site.master.vb" Inherits="Site" %>
+<!DOCTYPE html>
+<html>
+<head runat="server">
+    <title>Sample Site</title>
+</head>
+<body>
+    <form id="form1" runat="server">
+        <asp:Literal ID="litFooter" runat="server" />
+        <asp:ContentPlaceHolder ID="MainContent" runat="server" />
+    </form>
+</body>
+</html>
