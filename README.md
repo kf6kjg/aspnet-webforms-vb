@@ -58,7 +58,7 @@ file-template extension.
 
 | Path | Contents |
 | --- | --- |
-| [extension/](extension) | VS Code extension: grammar and snippets (stage 1) |
+| [extension/](extension) | VS Code extension: grammar, snippets, navigation (stages 1-2) |
 | [server/](server) | Language server (not started) |
 | [spike/](spike) | Throwaway feasibility console app |
 | [samples/](samples) | A tiny fake Web Site project to test against |
@@ -78,10 +78,24 @@ file-template extension.
   and all 1,630 real markup files tokenize without losing a `%>` (`mise run ext:smoke`).
 - [x] Stage 1: snippets for markup and VB code-behind, in the developer's style
   (see [extension/README.md](extension/README.md))
-- [ ] Stage 2: markup ↔ code-behind jump
-- [ ] Stage 2: `OnClick="Foo"` → `Sub Foo`
-- [ ] Stage 2: `Handles ctl.Event` ↔ markup control
-- [ ] Stage 2: `<%@ Register %>` → user control file
+- [x] Stage 2: markup ↔ code-behind jump (Ctrl+click `CodeFile=` / `Inherits=`, F7 /
+  Shift+F7)
+- [x] Stage 2: `OnClick="Foo"` → `Sub Foo`
+- [x] Stage 2: `Handles ctl.Event` ↔ markup control
+- [x] Stage 2: `<%@ Register %>` and `<uc1:X>` → user control file
+- [x] Stage 2 addition (the project director's request, beyond ADR 0005's list):
+  `href=` / `src=` / `ImageUrl=` and similar → the referenced site file
+- [x] Stage 2 addition (the project director's request): reference checks in open markup
+  files. Errors for broken `CodeFile` / `Inherits` / `@Register` / unregistered `uc1:`
+  tags / missing `On*=` handlers; warnings for missing local files. Across all 1,630
+  real markup files: 30 errors in 10 files, all real (backup and design copies plus one
+  live page), and 394 missing-file warnings in 139 files.
+- Stage 2 against the real sites (`mise run ext:smoke`): about 12,000 code navigation
+  targets and 8,315 URL references resolve. The 394 URL references that don't are
+  missing images, scripts, and pages, or pages that belong to other apps. The 60 that don't are real broken references in the sites (pages in
+  design and backup copies whose user controls weren't copied with them, one page with
+  unregistered `uc1:` tags, and one page with `Handles` on controls that don't exist)
+  plus a C# sample.
 - [ ] Stage 3: App_Code + per-page compilations
 - [ ] Stage 3: references from `Bin/*.dll`, `web.config` `<assemblies>`, Framework reference assemblies, NuGet `MySql.Data`
 - [ ] Stage 3: virtual partial classes generated from markup (WebControls, HtmlControls, `@Register` user controls)
@@ -111,7 +125,7 @@ mise run spike               # Roslyn feasibility spike against samples/
 mise run scan                # read-only scan of the real sites -> .scan/ (gitignored)
 mise run ext:install-deps    # once: extension npm dev dependencies
 mise run ext:test            # grammar tests + manifest check
-mise run ext:smoke           # tokenize every real markup file under $SITES_ROOT
+mise run ext:smoke           # grammar + navigation over every real site under $SITES_ROOT
 mise run ext:package         # build extension/dist/*.vsix
 ```
 

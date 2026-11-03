@@ -2,3 +2,6 @@ test/**
 node_modules/**
 dist/**
 **/*.map
+src/**
+out/test/**
+tsconfig.json

@@ -33,6 +33,9 @@ dir = "extension"
 run = "npm run package"
 
 [tasks."ext:smoke"]
-description = "Tokenize every real .aspx/.ascx/.master under $SITES_ROOT (read-only) and report grammar breakage"
+description = "Run grammar and navigation over every real site under $SITES_ROOT (read-only) and report breakage"
 dir = "extension"
-run = "node test/smoke-real-files.mjs \"$SITES_ROOT\""
+run = [
+  "node test/smoke-real-files.mjs \"$SITES_ROOT\"",
+  "npm run compile --silent && node out/test/smoke-navigation.js \"$SITES_ROOT\"",
+]
