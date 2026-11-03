@@ -1,0 +1,16 @@
+# .NET build output (spike, server). Anchored so samples/**/Bin is never ignored.
+/spike/bin/
+/spike/obj/
+/server/**/bin/
+/server/**/obj/
+
+# Extension build output
+/extension/node_modules/
+/extension/out/
+/extension/dist/
+
+# Machine-specific mise settings
+mise.local.toml
+
+# Site scan output: contains the developer's site names, paths and DLL names
+/.scan/
