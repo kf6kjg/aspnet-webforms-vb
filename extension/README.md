@@ -39,6 +39,7 @@ Ctrl+click (or F12) on any of these:
 | markup | `ID="btnSave"` on a server control | every `Sub … Handles btnSave.*` (a peek list when there are several) |
 | markup | `href=`, `src=`, `action=`, `background=`, `ImageUrl=`, `NavigateUrl=`, `PostBackUrl=` | the referenced file in the site |
 | code-behind | `btnSave` in `Handles btnSave.Click` | that control's `ID` in the markup |
+| VB code | the path in `Response.Redirect("…")`, `Server.Transfer` / `Execute` / `MapPath("…")`, `ResolveUrl("…")`, `LoadControl("…")`, or `x.Src = "…"` (any property named like the markup URL attributes) | the referenced file in the site |
 
 And, as in Visual Studio:
 
@@ -54,9 +55,14 @@ on Windows; a reference whose case differs from disk still works, with a warning
 JavaScript strings are never followed. Controls inside a `<%-- --%>` or `<% %>` block
 don't count, because ASP.NET doesn't create them either.
 
+VB paths work the same way, in `.vb` files and in `<% %>` blocks. A string joined to more
+(`"Buy.aspx?KeyID=" + id`) counts only if its `?` is already in it. Folders (`"~/Pics/" &
+name`, `"\Uploads\"`) and paths built in a variable first aren't followed. In `App_Code`,
+which has no page to be relative to, only `~/` and `/` paths are followed.
+
 ## What works (stage 2): reference checks
 
-Open `.aspx` / `.ascx` / `.master` files are checked as you type. Results show as
+Open `.aspx` / `.ascx` / `.master` files, and the VB paths above in open `.vb` files, are checked as you type. Results show as
 squiggles and in the Problems panel, with source "ASP.NET":
 
 | Severity | Problem |
@@ -66,7 +72,7 @@ squiggles and in the Problems panel, with source "ASP.NET":
 | Error | `@Register Src=` names a user control that doesn't exist |
 | Error | a `<uc1:X runat="server">` tag has no matching `@Register` in the file |
 | Error | `OnClick="Foo"` (or another server `On*=`) names a `Sub` the code-behind lacks |
-| Warning | `href=` / `src=` / `ImageUrl=` and similar name a local file that doesn't exist |
+| Warning | `href=` / `src=` / `ImageUrl=` and similar, or a VB path such as `Response.Redirect("…")`, name a local file that doesn't exist |
 | Warning | `CodeFile=`, `@Register Src=` or a URL names a file in a different case than on disk (a case-sensitive server wouldn't find it); the message spells it as on disk |
 
 The errors are references ASP.NET refuses to compile. The warnings are files a browser

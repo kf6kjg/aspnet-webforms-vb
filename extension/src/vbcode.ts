@@ -1,4 +1,5 @@
-// Light parsing of VB code-behind: method and class declarations and Handles clauses.
+// Light parsing of VB code-behind: method and class declarations, Handles clauses, and
+// string literals.
 // VB is case-insensitive, so every match is too. No vscode imports.
 
 import { Span } from "./markup";
@@ -93,4 +94,45 @@ export function handlersOf(text: string, controlId: string): Handler[] {
     }
   }
   return result;
+}
+
+export interface VbString {
+  /** Contents, `""` unescaped. */
+  value: string;
+  /** Inside the quotes. */
+  span: Span;
+}
+
+/**
+ * The string literals in VB `text`, and `code`: the text with every literal's contents
+ * and every comment blanked (same length, quotes and newlines kept), so the code around a
+ * literal can be matched without tripping over what's inside it.
+ */
+export function vbStrings(text: string): { code: string; strings: VbString[] } {
+  const strings: VbString[] = [];
+  let code = "";
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (c === '"') {
+      let value = "";
+      let j = i + 1;
+      for (; j < text.length && text[j] !== "\n"; j++) {
+        if (text[j] !== '"') value += text[j];
+        else if (text[j + 1] === '"') { value += '"'; j++; }
+        else break;
+      }
+      const closed = text[j] === '"';
+      strings.push({ value, span: { start: i + 1, end: j } });
+      code += '"' + " ".repeat(j - i - 1) + (closed ? '"' : "");
+      i = closed ? j : j - 1;
+    } else if (c === "'") {
+      const nl = text.indexOf("\n", i);
+      const end = nl < 0 ? text.length : nl;
+      code += " ".repeat(end - i);
+      i = end - 1;
+    } else {
+      code += c;
+    }
+  }
+  return { code, strings };
 }

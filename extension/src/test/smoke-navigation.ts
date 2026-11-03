@@ -4,10 +4,10 @@
 //   node out/test/smoke-navigation.js <folder>
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
-import { Host, codeBehindFor, definitionInCodeBehind, definitionInMarkup, localPath, markupFor } from "../navigation";
-import { attr, isEventHandlerAttr, maskServerBlocks, registrations, tags } from "../markup";
+import { Host, PathRef, codeBehindFor, definitionInCodeBehind, definitionInMarkup, definitionInVb, localPath, markupFor, vbPathRefs } from "../navigation";
+import { attr, isEventHandlerAttr, maskServerBlocks, registrations, serverCode, tags } from "../markup";
 import { handlersOf } from "../vbcode";
-import { checkMarkup } from "../diagnostics";
+import { Problem, checkMarkup, checkVb } from "../diagnostics";
 
 const dirCache = new Map<string, Promise<string[] | undefined>>();
 const host: Host = {
@@ -23,7 +23,7 @@ async function* walk(dir: string): AsyncGenerator<string> {
   for (const e of await fs.readdir(dir, { withFileTypes: true })) {
     const p = path.join(dir, e.name);
     if (e.isDirectory()) { if (!skip.has(e.name.toLowerCase())) yield* walk(p); }
-    else if (/\.(aspx|ascx|master)$/i.test(e.name)) yield p;
+    else if (/\.(aspx|ascx|master|vb)$/i.test(e.name)) yield p;
   }
 }
 
@@ -35,19 +35,33 @@ function record(kind: string, ok: boolean, example: string): void {
   tally.set(kind, t);
 }
 
+function recordProblems(rel: string, text: string, problems: Problem[]): void {
+  for (const p of problems) {
+    const key = `${p.severity} ${p.code}`;
+    const t = problemTally.get(key) ?? { files: new Set<string>(), examples: [] };
+    t.files.add(rel);
+    t.examples.push(`${rel}:${text.slice(0, p.span.start).split("\n").length}: ${p.message}`);
+    problemTally.set(key, t);
+  }
+}
+
+async function recordVbPaths(kind: string, rel: string, text: string, refs: PathRef[], go: (offset: number) => Promise<unknown>): Promise<void> {
+  for (const r of refs) record(kind, !!(await go(r.span.start)), `${rel}: "${text.slice(r.span.start, r.span.end)}"`);
+}
+
 async function main(root: string): Promise<void> {
   for await (const file of walk(root)) {
     const rel = path.relative(root, file);
     const text = (await host.readText(file))!;
+    if (/\.vb$/i.test(file)) {
+      recordProblems(rel, text, await checkVb(host, file, text, { missingFiles: true }));
+      await recordVbPaths("VB string path -> site file", rel, text, vbPathRefs(text, file), async (o) => (await definitionInVb(host, file, text, o))?.targets.length);
+      continue;
+    }
     const masked = maskServerBlocks(text);
 
-    for (const p of await checkMarkup(host, file, text, { missingFiles: true })) {
-      const key = `${p.severity} ${p.code}`;
-      const t = problemTally.get(key) ?? { files: new Set<string>(), examples: [] };
-      t.files.add(rel);
-      t.examples.push(`${rel}:${text.slice(0, p.span.start).split("\n").length}: ${p.message}`);
-      problemTally.set(key, t);
-    }
+    recordProblems(rel, text, await checkMarkup(host, file, text, { missingFiles: true }));
+    await recordVbPaths("<% %> string path -> site file", rel, text, vbPathRefs(serverCode(text), file), async (o) => (await definitionInMarkup(host, file, text, o))?.targets.length);
 
     const codeFile = await codeBehindFor(host, file, text);
     record("markup -> code-behind", !!codeFile, rel);

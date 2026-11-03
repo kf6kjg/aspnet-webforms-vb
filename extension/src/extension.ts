@@ -1,5 +1,6 @@
-// VS Code wiring. Stage 2: definition providers (Ctrl+click / F12), markup reference
-// checks, and the Visual Studio style View Code (F7) / View Markup (Shift+F7) commands;
+// VS Code wiring. Stage 2: definition providers (Ctrl+click / F12), reference checks
+// for markup and for site paths in VB strings, and the Visual Studio style View Code
+// (F7) / View Markup (Shift+F7) commands;
 // the logic lives in navigation.ts and diagnostics.ts. Stage 3: starts the language server
 // (server/AspxVb.Server) for completion, diagnostics, definition and hover in VB files.
 // SQL, HTML, JavaScript, CSS, XML and JSON in VB strings: the code action that suggests
@@ -10,8 +11,8 @@ import * as os from "node:os";
 import * as path from "node:path";
 import * as vscode from "vscode";
 import { LanguageClient, LanguageClientOptions, ServerOptions, TransportKind } from "vscode-languageclient/node";
-import { Host, Jump, codeBehindFor, definitionInCodeBehind, definitionInMarkup, markupFor } from "./navigation";
-import { checkMarkup } from "./diagnostics";
+import { Host, Jump, codeBehindFor, definitionInCodeBehind, definitionInMarkup, definitionInVb, markupFor } from "./navigation";
+import { checkMarkup, checkVb } from "./diagnostics";
 import { dialectNames, suggestMarker } from "./sqlmarker";
 import { languageNames, suggestLanguage } from "./langmarker";
 
@@ -62,7 +63,7 @@ async function open(file: string | undefined, notFound: string): Promise<void> {
   else void vscode.window.showInformationMessage(notFound);
 }
 
-/** Markup reference problems for open .aspx/.ascx/.master documents. */
+/** Reference problems for open .aspx/.ascx/.master documents, and site path problems for open .vb ones. */
 function registerDiagnostics(context: vscode.ExtensionContext): void {
   const collection = vscode.languages.createDiagnosticCollection("aspx-vb");
   const timers = new Map<string, NodeJS.Timeout>();
@@ -70,7 +71,8 @@ function registerDiagnostics(context: vscode.ExtensionContext): void {
   const run = async (doc: vscode.TextDocument): Promise<void> => {
     const version = doc.version;
     const missingFiles = vscode.workspace.getConfiguration("aspxVb", doc.uri).get<boolean>("diagnostics.missingFiles", true);
-    const found = await checkMarkup(host, doc.uri.fsPath, doc.getText(), { missingFiles });
+    const check = doc.languageId === "vb" ? checkVb : checkMarkup;
+    const found = await check(host, doc.uri.fsPath, doc.getText(), { missingFiles });
     if (doc.isClosed || doc.version !== version) return;
     collection.set(
       doc.uri,
@@ -84,7 +86,7 @@ function registerDiagnostics(context: vscode.ExtensionContext): void {
     );
   };
   const schedule = (doc: vscode.TextDocument): void => {
-    if (doc.languageId !== "aspx-vb") return;
+    if (doc.languageId !== "aspx-vb" && doc.languageId !== "vb") return;
     const key = doc.uri.toString();
     clearTimeout(timers.get(key));
     timers.set(key, setTimeout(() => { timers.delete(key); void run(doc); }, 400));
@@ -118,6 +120,11 @@ export function activate(context: vscode.ExtensionContext): void {
       provideDefinition: async (doc, pos) =>
         client?.isRunning() ? [] : toLinks(doc, await definitionInCodeBehind(host, doc.uri.fsPath, doc.getText(), doc.offsetAt(pos))),
     }),
+    // Site paths in strings (Response.Redirect("~/Buy.aspx")): the server has nothing there.
+    vscode.languages.registerDefinitionProvider(
+      { language: "vb" },
+      { provideDefinition: async (doc, pos) => toLinks(doc, await definitionInVb(host, doc.uri.fsPath, doc.getText(), doc.offsetAt(pos))) },
+    ),
     vscode.commands.registerCommand("aspxVb.viewCode", async () => {
       const doc = vscode.window.activeTextEditor?.document;
       if (!doc) return;

@@ -1,8 +1,8 @@
 import { test } from "node:test";
 import * as assert from "node:assert/strict";
 import * as path from "node:path";
-import { Host, codeBehindFor, definitionInCodeBehind, definitionInMarkup, localPath, markupFor } from "../navigation";
-import { directives, maskServerBlocks, tags } from "../markup";
+import { Host, codeBehindFor, definitionInCodeBehind, definitionInMarkup, definitionInVb, localPath, markupFor, vbPathRefs } from "../navigation";
+import { directives, maskServerBlocks, serverCode, tags } from "../markup";
 import { handlersOf, handlesAt } from "../vbcode";
 
 // A tiny site in the developer's style. Casing of references deliberately differs
@@ -50,6 +50,23 @@ const files: Record<string, string> = {
   "/site/scripts/Cookie.js": "",
   "/site/Images/go.gif": "",
   "/site/My Pic.png": "",
+  "/site/Go.aspx.vb": [
+    "Partial Class Go",
+    " Inherits System.Web.UI.Page",
+    " Private Sub Go()",
+    '  Response.Redirect("buy.aspx?KeyID=" + KeyID.Value.ToString())',
+    '  Server.Transfer("~/Controls/Header.ascx", False)',
+    '  imgGo.Src = "/images/GO.gif" \' Response.Redirect("/commented.aspx")',
+    '  Response.Redirect("/Images/" & name)',
+    '  Response.Redirect("https://" + Request.ServerVariables("HTTP_HOST"))',
+    '  lblMsg.Text = "/styles/TreeView.css"',
+    '  cmd.Execute("Buy.aspx")',
+    '  Response.Redirect("Gone.aspx")',
+    '  File.Delete(Server.MapPath("\\Images\\") & name) : Response.Redirect("/Controls/")',
+    " End Sub",
+    "End Class",
+  ].join("\n"),
+  "/site/App_Code/Nav.vb": 'Module Nav\n Sub Home()\n  Response.Redirect("Buy.aspx")\n  HttpContext.Current.Response.Redirect("~/Buy.aspx")\n End Sub\nEnd Module',
 };
 
 const host: Host = {
@@ -170,4 +187,36 @@ test("external URLs, anchors, server-built URLs and missing files go nowhere", a
 test("HTML built in JavaScript strings or client templates is not a path", () => {
   for (const v of ["' + searchitem.imageUrl + '", "{{{img}}}", "\" + base + \""]) assert.equal(localPath(v), undefined, v);
   assert.equal(localPath("/styles/Site.css?v=2"), "/styles/Site.css");
+});
+
+test("server code keeps <% %> block contents at their offsets and blanks everything else", () => {
+  const text = '<a href="<%= ResolveUrl("~/x") %>"><%@ Page Language="VB" %><%-- "c" --%>\n<%# Eval("y") %>';
+  const code = serverCode(text);
+  assert.equal(code.length, text.length);
+  assert.equal(code.trim().replace(/\s+/g, " "), 'ResolveUrl("~/x") Eval("y")');
+  assert.equal(code.indexOf("ResolveUrl"), text.indexOf("ResolveUrl"));
+});
+
+test("VB site paths: Redirect/Transfer arguments and URL property values, not comments, other strings, folders or unfinished concatenations", () => {
+  assert.deepEqual(vbPathRefs(files["/site/Go.aspx.vb"], "/site/Go.aspx.vb").map((r) => r.ref), ["buy.aspx", "~/Controls/Header.ascx", "/images/GO.gif", "Gone.aspx"]);
+});
+
+test("App_Code has no page to be relative to, so only site-rooted paths count there", () => {
+  assert.deepEqual(vbPathRefs(files["/site/App_Code/Nav.vb"], "/site/App_Code/Nav.vb").map((r) => r.ref), ["~/Buy.aspx"]);
+});
+
+test("Response.Redirect(\"…\") and img.Src = \"…\" -> the file, case-insensitively", async () => {
+  const goVb = files["/site/Go.aspx.vb"];
+  const go = async (needle: string) => (await definitionInVb(host, "/site/Go.aspx.vb", goVb, at(goVb, needle)))?.targets.map((t) => t.file);
+  assert.deepEqual(await go("buy.aspx"), ["/site/Buy.aspx"]);
+  assert.deepEqual(await go("~/Controls/Header"), ["/site/Controls/Header.ascx"]);
+  assert.deepEqual(await go("/images/GO"), ["/site/Images/go.gif"]);
+  for (const needle of ["/styles/TreeView", "Gone.aspx", "/commented"]) assert.equal(await go(needle), undefined, needle);
+  const j = await definitionInVb(host, "/site/Go.aspx.vb", goVb, at(goVb, "buy.aspx"));
+  assert.equal(goVb.slice(j!.origin.start, j!.origin.end), "buy.aspx?KeyID=");
+});
+
+test("a path in a <%= %> block in markup -> the file", async () => {
+  const j = await definitionInMarkup(host, "/site/Buy.aspx", buy, at(buy, '"~/scripts/Cookie', 3));
+  assert.deepEqual(j?.targets, [{ file: "/site/scripts/Cookie.js" }]);
 });

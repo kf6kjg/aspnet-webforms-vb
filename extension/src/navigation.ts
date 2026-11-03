@@ -1,11 +1,12 @@
 // Stage 2 navigation (ADR 0005): markup <-> code-behind, OnClick="Foo" -> Sub Foo,
-// Handles ctl.Event <-> the control in markup, <uc1:X> / @Register Src -> the .ascx.
+// Handles ctl.Event <-> the control in markup, <uc1:X> / @Register Src -> the .ascx,
+// and site paths (href=, Response.Redirect("…"), …) -> the file.
 // Pure logic over an injected file host, shared by the extension and the smoke test.
 
 import * as path from "node:path";
-import { Span, attr, findControl, isEventHandlerAttr, isServerTag, mainDirective, maskServerBlocks, registrations, directives, tags, within } from "./markup";
-import { findClass, findMethod, handlersOf, handlesAt } from "./vbcode";
-import { DirReader, findSiteRoot, markupForCodeBehind, resolveOnDisk, resolveReference, respelled } from "./paths";
+import { Span, attr, findControl, isEventHandlerAttr, isServerTag, mainDirective, maskServerBlocks, registrations, directives, serverCode, tags, within } from "./markup";
+import { findClass, findMethod, handlersOf, handlesAt, vbStrings } from "./vbcode";
+import { DirReader, findSiteRoot, isCodeBehind, markupForCodeBehind, resolveOnDisk, resolveReference, respelled } from "./paths";
 
 export interface Host extends DirReader {
   /** File text, or undefined if it can't be read. */
@@ -83,6 +84,9 @@ export async function definitionInMarkup(host: Host, file: string, text: string,
     return undefined;
   }
 
+  const inCode = await pathJump(host, file, vbPathRefs(serverCode(text), file), offset);
+  if (inCode) return inCode;
+
   const tag = tags(maskServerBlocks(text)).find((t) => within(t.span, offset));
   if (!tag) return undefined;
 
@@ -128,6 +132,54 @@ export function localPath(url: string): string | undefined {
   } catch {
     return p;
   }
+}
+
+/** VB calls whose first argument is a site path (Response.Redirect, Server.MapPath, Page.ResolveUrl, …). */
+const vbPathCall = /(?:\b(?:Redirect|RedirectPermanent|MapPath|ResolveUrl|ResolveClientUrl|LoadControl)|\bServer[ \t]*\.[ \t]*(?:Transfer|Execute))[ \t]*\([ \t]*"$/i;
+/** `img.Src = "…"`: an assignment to one of the urlAttrs properties. */
+const vbUrlProperty = new RegExp(`\\.[ \\t]*(?:${[...urlAttrs].join("|")})[ \\t]*=[ \\t]*"$`, "i");
+
+export interface PathRef {
+  /** The file part, as localPath returns it. */
+  ref: string;
+  /** The literal's contents, inside the quotes. */
+  span: Span;
+}
+
+/**
+ * Site paths in VB string literals: the first argument of a vbPathCall, or a value
+ * assigned to a URL property. A literal joined to more with & or + counts only once its
+ * path is complete (a ? or # is in it), so "~/Pics/" & name is skipped. A folder
+ * (Server.MapPath("\Uploads\") & name) isn't a file to open, and is often a virtual
+ * directory, so a trailing slash skips it too. Relative paths count in code-behind and
+ * markup, which sit beside their page, but not in App_Code, which runs for whatever page
+ * was requested.
+ */
+export function vbPathRefs(text: string, file: string): PathRef[] {
+  const { code, strings } = vbStrings(text);
+  const relativeOk = !/\.vb$/i.test(file) || isCodeBehind(file);
+  const joined = /[ \t]*[&+]/y;
+  const refs: PathRef[] = [];
+  for (const s of strings) {
+    const before = code.slice(code.lastIndexOf("\n", s.span.start) + 1, s.span.start);
+    if (!vbPathCall.test(before) && !vbUrlProperty.test(before)) continue;
+    joined.lastIndex = s.span.end + 1;
+    if (joined.test(code) && !/[?#]/.test(s.value)) continue;
+    const ref = localPath(s.value);
+    if (ref && !/[\\/]$/.test(ref) && (relativeOk || /^[~/\\]/.test(ref))) refs.push({ ref, span: s.span });
+  }
+  return refs;
+}
+
+async function pathJump(host: Host, file: string, refs: PathRef[], offset: number): Promise<Jump | undefined> {
+  const r = refs.find((x) => within(x.span, offset));
+  const target = r && (await resolveRef(host, r.ref, file));
+  return target ? { origin: r!.span, targets: [{ file: target }] } : undefined;
+}
+
+/** A site path in a VB string (Response.Redirect("~/Buy.aspx"), img.Src = "…") -> that file. */
+export async function definitionInVb(host: Host, file: string, text: string, offset: number): Promise<Jump | undefined> {
+  return pathJump(host, file, vbPathRefs(text, file), offset);
 }
 
 export async function definitionInCodeBehind(host: Host, file: string, text: string, offset: number): Promise<Jump | undefined> {

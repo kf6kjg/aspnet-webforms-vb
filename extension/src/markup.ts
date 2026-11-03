@@ -70,6 +70,24 @@ export function maskServerBlocks(text: string): string {
   return text.replace(/<%--[\s\S]*?--%>|<%[\s\S]*?%>/g, (m) => m.replace(/[^\n]/g, " "));
 }
 
+/**
+ * The inverse of maskServerBlocks: only the VB code inside <% %>, <%= %> and <%# %>
+ * blocks is kept, and everything else (markup, delimiters, directives, server comments)
+ * is blanked, so VB scanners see that code at its real offsets.
+ */
+export function serverCode(text: string): string {
+  const blank = (s: string): string => s.replace(/[^\n]/g, " ");
+  let out = "";
+  let last = 0;
+  for (const m of text.matchAll(/<%--[\s\S]*?--%>|<%(?!@)[=#:]?([\s\S]*?)%>/g)) {
+    if (m[1] === undefined) continue;
+    const start = m.index! + m[0].length - 2 - m[1].length;
+    out += blank(text.slice(last, start)) + m[1];
+    last = start + m[1].length;
+  }
+  return out + blank(text.slice(last));
+}
+
 export function directives(text: string): Directive[] {
   const result: Directive[] = [];
   for (const m of text.matchAll(/<%@\s*([\s\S]*?)%>/g)) {

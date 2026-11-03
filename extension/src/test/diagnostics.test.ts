@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import * as assert from "node:assert/strict";
-import { checkMarkup } from "../diagnostics";
+import { checkMarkup, checkVb } from "../diagnostics";
 import { Host } from "../navigation";
 
 const files: Record<string, string> = {
@@ -39,6 +39,8 @@ const files: Record<string, string> = {
   ].join("\n"),
   "/site/Sample.aspx.cs": "public partial class Sample : System.Web.UI.Page { }",
   "/site/Sample.aspx": '<%@ Page Language="C#" CodeFile="Sample.aspx.cs" Inherits="Other" %>\n<asp:Button ID="b" runat="server" OnClick="Gone_Click" />',
+  "/site/Go.aspx.vb": 'Response.Redirect("good.aspx")\nResponse.Redirect("/Nope.aspx?id=" + id)\nimg.Src = "/styles/Site.css"\nResponse.Redirect("Bad" & ".aspx")',
+  "/site/Blocks.aspx": '<% Response.Redirect("/nope.aspx") %>\n<script src="<%= ResolveUrl("~/Styles/site.css") %>"></script>',
   "/site/WrongClass.aspx": '<%@ Page Language="VB" AutoEventWireup="false" CodeFile="Good.aspx.vb" Inherits="Other" %>\n<asp:Button ID="b" runat="server" OnClick="Gone_Click" />',
 };
 
@@ -55,7 +57,7 @@ const host: Host = {
 };
 
 async function check(file: string, missingFiles = true) {
-  const problems = await checkMarkup(host, file, files[file], { missingFiles });
+  const problems = await (file.endsWith(".vb") ? checkVb : checkMarkup)(host, file, files[file], { missingFiles });
   return problems.map((p) => `${p.severity} ${p.code} ${files[file].slice(p.span.start, p.span.end)}`);
 }
 
@@ -98,4 +100,11 @@ test("missing-file warnings can be turned off", async () => {
 
 test("a C# code-behind isn't checked by VB rules", async () => {
   assert.deepEqual(await check("/site/Sample.aspx"), []);
+});
+
+test("site paths in VB strings get the same warnings, in .vb files and <% %> blocks", async () => {
+  assert.deepEqual(await check("/site/Go.aspx.vb"), ["warning case-mismatch good.aspx", "warning missing-file /Nope.aspx?id="]);
+  assert.deepEqual(await check("/site/Blocks.aspx"), ["warning missing-file /nope.aspx", "warning case-mismatch ~/Styles/site.css"]);
+  assert.deepEqual(await check("/site/Go.aspx.vb", false), []);
+  assert.deepEqual(await check("/site/Blocks.aspx", false), []);
 });

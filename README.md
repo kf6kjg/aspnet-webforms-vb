@@ -126,6 +126,12 @@ file-template extension.
   `@Register Src=` or URL whose case differs from disk is a warning. On the real sites:
   5,899 such references in 1,257 files, from 55 distinct ones, nearly all `/styles/` and
   `/scripts/` against `Styles` and `Scripts` on disk. Not yet run on real Windows.
+- [x] Site paths in VB strings ([ADR 0014](docs/adr/0014-site-paths-in-vb-strings.md)): Ctrl+click on
+  `Response.Redirect("~/Buy.aspx")`, `Server.MapPath` / `Transfer`, `ResolveUrl`,
+  `LoadControl`, and `img.Src = "…"`-style assignments goes to the file, in `.vb` files
+  and `<% %>` blocks, with the same missing-file and case warnings as markup URLs. On the
+  real sites: 3,890 resolve, and the 125 that don't are real (backup copies, dead links,
+  sub-application `/` paths). 535 new case warnings, 528 of them `/default.aspx`.
 - Stage 3 against the real sites (`mise run server:check`): 22 sites and 1,628 markup files
   compile. Every error reported on a live page is a real bug in that page (undeclared
   variables, `Handles` on controls that no longer exist, unfinished statements). Opening a

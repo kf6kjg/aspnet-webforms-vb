@@ -2,7 +2,7 @@
   "name": "aspnet-webforms-vb",
   "displayName": "ASP.NET Web Forms (VB) for Web Site projects",
   "description": "Highlighting, snippets, navigation, completion and error checking for legacy ASP.NET Web Forms Web Site projects in VB.NET (.aspx, .ascx, .master, code-behind).",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "publisher": "kf6kjg",
   "private": true,
   "license": "MIT",
@@ -126,7 +126,7 @@
         "aspxVb.diagnostics.missingFiles": {
           "type": "boolean",
           "default": true,
-          "description": "Warn about href, src, ImageUrl and similar references to files that don't exist in the site, or whose case differs from the file on disk."
+          "description": "Warn about href, src, ImageUrl and similar references, and paths in VB strings such as Response.Redirect(\"…\"), to files that don't exist in the site, or whose case differs from the file on disk."
         },
         "aspxVb.server.path": {
           "type": "string",

@@ -1,13 +1,15 @@
 // Markup reference checks: the stage 2 resolvers, reported as problems when they miss.
 // Errors are references ASP.NET refuses to compile; warnings are local files a browser
 // would get a 404 for, and references whose case differs from the file on disk, which
-// a case-sensitive server wouldn't find (ADR 0012). Anything inside VB code is left to the language server (stage 3),
-// which reports it as the compiler does. No vscode imports.
+// a case-sensitive server wouldn't find (ADR 0012). Site paths in VB strings
+// (Response.Redirect("…"), in .vb files and <% %> blocks) get the same warnings (ADR 0014);
+// everything else in VB code is left to the language server (stage 3), which reports it
+// as the compiler does. No vscode imports.
 
 import * as path from "node:path";
-import { Span, attr, isEventHandlerAttr, isServerTag, mainDirective, maskServerBlocks, directives, tags } from "./markup";
+import { Span, attr, isEventHandlerAttr, isServerTag, mainDirective, maskServerBlocks, directives, serverCode, tags } from "./markup";
 import { findClass, findMethod } from "./vbcode";
-import { Host, Resolved, localPath, locateRef, urlAttrs } from "./navigation";
+import { Host, PathRef, Resolved, localPath, locateRef, urlAttrs, vbPathRefs } from "./navigation";
 
 export interface Problem {
   span: Span;
@@ -17,7 +19,7 @@ export interface Problem {
 }
 
 export interface CheckOptions {
-  /** Report missing href/src/…Url files, and their case mismatches (warnings). */
+  /** Report missing href/src/…Url and Response.Redirect("…") files, and their case mismatches (warnings). */
   missingFiles: boolean;
 }
 
@@ -36,6 +38,18 @@ function cached(host: Host): Host {
 function caseProblem(span: Span, ref: string, found: Resolved): Problem[] {
   if (!found.respelled || found.respelled === ref) return [];
   return [{ span, severity: "warning", code: "case-mismatch", message: `'${ref}' differs in case from the file on disk ('${found.respelled}'); a case-sensitive server wouldn't find it.` }];
+}
+
+async function urlProblems(host: Host, file: string, span: Span, ref: string): Promise<Problem[]> {
+  const found = await locateRef(host, ref, file);
+  if (found) return caseProblem(span, ref, found);
+  return [{ span, severity: "warning", code: "missing-file", message: `File '${ref}' not found in the site.` }];
+}
+
+async function pathProblems(host: Host, file: string, refs: PathRef[]): Promise<Problem[]> {
+  const problems: Problem[] = [];
+  for (const r of refs) problems.push(...(await urlProblems(host, file, r.span, r.ref)));
+  return problems;
 }
 
 export async function checkMarkup(baseHost: Host, file: string, text: string, options: CheckOptions): Promise<Problem[]> {
@@ -101,11 +115,15 @@ export async function checkMarkup(baseHost: Host, file: string, text: string, op
       }
       if (options.missingFiles && urlAttrs.has(a.name.toLowerCase())) {
         const ref = localPath(text.slice(a.valueSpan.start, a.valueSpan.end));
-        const found = ref && (await locateRef(host, ref, file));
-        if (found) problems.push(...caseProblem(a.valueSpan, ref!, found));
-        else if (ref) problems.push({ span: a.valueSpan, severity: "warning", code: "missing-file", message: `File '${ref}' not found in the site.` });
+        if (ref) problems.push(...(await urlProblems(host, file, a.valueSpan, ref)));
       }
     }
   }
+  if (options.missingFiles) problems.push(...(await pathProblems(host, file, vbPathRefs(serverCode(text), file))));
   return problems;
+}
+
+/** A .vb file's site paths in strings: the same warnings as URLs in markup. */
+export async function checkVb(baseHost: Host, file: string, text: string, options: CheckOptions): Promise<Problem[]> {
+  return options.missingFiles ? pathProblems(cached(baseHost), file, vbPathRefs(text, file)) : [];
 }
