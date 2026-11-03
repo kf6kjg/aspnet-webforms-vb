@@ -83,7 +83,7 @@ public sealed class SiteWorkspace
 
     private string Read(string path) => _overlays.TryGetValue(path, out var text) ? text : FileText.Read(path);
 
-    private bool InAppCode(string path) => path.StartsWith(_appCodeDir + "/", StringComparison.OrdinalIgnoreCase);
+    private bool InAppCode(string path) => path.StartsWith(_appCodeDir + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
 
     private static bool IsMarkup(string path) => Path.GetExtension(path).ToLowerInvariant() is ".aspx" or ".ascx" or ".master";
 
@@ -107,8 +107,8 @@ public sealed class SiteWorkspace
     private IEnumerable<string> MarkupCandidatesFor(string codeBehind)
     {
         if (!codeBehind.EndsWith(".vb", StringComparison.OrdinalIgnoreCase)) yield break;
-        var conventional = codeBehind[..^3];
-        if (IsMarkup(conventional) && File.Exists(conventional)) yield return conventional;
+        var conventional = FileText.OnDisk(codeBehind[..^3]);
+        if (conventional != null && IsMarkup(conventional) && File.Exists(conventional)) yield return conventional;
         var dir = Path.GetDirectoryName(codeBehind)!;
         foreach (var m in Directory.EnumerateFiles(dir).Where(IsMarkup).Where(m => m != conventional))
             if (Markup.MainDirective(Read(m))?.Get("CodeFile") is { } cf && FileText.Resolve(cf.Value, m, Root) == codeBehind)

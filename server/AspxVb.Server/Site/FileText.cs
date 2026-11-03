@@ -19,23 +19,30 @@ public static class FileText
 
     public static SourceText ReadSource(string path) => SourceText.From(Read(path), Encoding.UTF8);
 
+    // Windows and macOS file systems ignore case, so an existing path may still be spelled differently from disk.
+    private static readonly bool CaseInsensitiveFileSystem = OperatingSystem.IsWindows() || OperatingSystem.IsMacOS();
+
+    private static readonly EnumerationOptions IgnoringCase = new() { MatchCasing = MatchCasing.CaseInsensitive, MatchType = MatchType.Simple, AttributesToSkip = 0 };
+
     /// <summary>
-    /// <paramref name="path"/> as it exists on disk, matching each segment case-insensitively
-    /// when the exact name is missing (the developer's references come from Windows).
+    /// <paramref name="path"/> spelled as it exists on disk, matching each segment
+    /// case-insensitively (the developer's references come from Windows). Every path the
+    /// server keys on goes through this, so they agree on every OS (ADR 0012).
     /// </summary>
     public static string? OnDisk(string path)
     {
         var full = Path.GetFullPath(path);
-        if (File.Exists(full) || Directory.Exists(full)) return full;
-        var current = "/";
-        foreach (var part in full.Split('/', StringSplitOptions.RemoveEmptyEntries))
+        if (!CaseInsensitiveFileSystem && (File.Exists(full) || Directory.Exists(full))) return full;
+        var root = Path.GetPathRoot(full)!;
+        var current = root;
+        foreach (var part in full[root.Length..].Split(['/', '\\'], StringSplitOptions.RemoveEmptyEntries))
         {
-            var exact = Path.Combine(current, part);
-            if (File.Exists(exact) || Directory.Exists(exact)) { current = exact; continue; }
             if (!Directory.Exists(current)) return null;
-            var match = Directory.EnumerateFileSystemEntries(current).FirstOrDefault(e => Path.GetFileName(e).Equals(part, StringComparison.OrdinalIgnoreCase));
+            // The pattern only narrows the listing (a name may hold * or ?); the exact spelling wins when both exist.
+            var names = Directory.EnumerateFileSystemEntries(current, part, IgnoringCase).Select(Path.GetFileName).ToList();
+            var match = names.FirstOrDefault(n => n == part) ?? names.FirstOrDefault(n => part.Equals(n, StringComparison.OrdinalIgnoreCase));
             if (match == null) return null;
-            current = match;
+            current = Path.Combine(current, match);
         }
         return current;
     }

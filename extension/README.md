@@ -49,7 +49,7 @@ Both are also on the editor's right-click menu.
 
 How references resolve: `~/` and `/` are relative to the nearest folder that holds a
 `web.config`; other paths are relative to the page. Names match case-insensitively, as
-on Windows. `?query` and `#fragment` are ignored. External URLs (`http:`, `mailto:`,
+on Windows; a reference whose case differs from disk still works, with a warning (below). `?query` and `#fragment` are ignored. External URLs (`http:`, `mailto:`,
 `javascript:`, `//host`), `#anchors`, URLs built with `<%= %>`, and HTML built inside
 JavaScript strings are never followed. Controls inside a `<%-- --%>` or `<% %>` block
 don't count, because ASP.NET doesn't create them either.
@@ -67,6 +67,7 @@ squiggles and in the Problems panel, with source "ASP.NET":
 | Error | a `<uc1:X runat="server">` tag has no matching `@Register` in the file |
 | Error | `OnClick="Foo"` (or another server `On*=`) names a `Sub` the code-behind lacks |
 | Warning | `href=` / `src=` / `ImageUrl=` and similar name a local file that doesn't exist |
+| Warning | `CodeFile=`, `@Register Src=` or a URL names a file in a different case than on disk (a case-sensitive server wouldn't find it); the message spells it as on disk |
 
 The errors are references ASP.NET refuses to compile. The warnings are files a browser
 would get a 404 for; turn them off with the `aspxVb.diagnostics.missingFiles` setting.

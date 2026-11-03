@@ -1,7 +1,8 @@
 // Site-relative path resolution for a Web Site project. Windows paths are case-
 // insensitive and the developer's references don't always match on-disk casing, so
-// lookups fall back to a case-insensitive directory scan. File access goes through an
-// injected interface so this runs both in the extension host and under plain node.
+// lookups match each name case-insensitively and return the on-disk spelling, on every
+// OS (ADR 0012). File access goes through an injected interface so this runs both in
+// the extension host and under plain node.
 
 import * as path from "node:path";
 
@@ -12,8 +13,10 @@ export interface DirReader {
 
 /** `absPath` as it exists on disk, matching each segment case-insensitively if needed. */
 export async function resolveOnDisk(fs: DirReader, absPath: string): Promise<string | undefined> {
-  const parts = path.resolve(absPath).split("/").filter((p) => p.length > 0);
-  let current = "/";
+  const full = path.resolve(absPath);
+  const root = path.parse(full).root;
+  const parts = full.slice(root.length).split(/[\\/]/).filter((p) => p.length > 0);
+  let current = root;
   for (const part of parts) {
     const entries = await fs.readDir(current);
     if (!entries) return undefined;
@@ -42,6 +45,19 @@ export function resolveReference(ref: string, fileDir: string, siteRoot: string 
   if (r.startsWith("~/")) return path.join(siteRoot ?? fileDir, r.slice(2));
   if (r.startsWith("/")) return path.join(siteRoot ?? fileDir, r.slice(1));
   return path.join(fileDir, r);
+}
+
+/** `ref` with each name spelled as in `found`, the path it resolved to (for case warnings). */
+export function respelled(ref: string, found: string): string {
+  const names = found.split(/[\\/]/);
+  const parts = ref.split(/([\\/])/);
+  for (let i = parts.length - 1, j = names.length - 1; i >= 0 && j >= 0; i--) {
+    const p = parts[i];
+    if (p === "..") break;
+    if (p === "" || p === "/" || p === "\\" || p === "." || p === "~") continue;
+    parts[i] = names[j--];
+  }
+  return parts.join("");
 }
 
 const codeBehindPattern = /\.(aspx|ascx|master)\.vb$/i;

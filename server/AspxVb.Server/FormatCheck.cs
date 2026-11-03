@@ -17,10 +17,10 @@ public static class FormatCheck
         folder = Path.GetFullPath(folder);
         var excluded = (Environment.GetEnvironmentVariable("SCAN_EXCLUDE") ?? "")
             .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Select(e => Path.GetFullPath(Path.Combine(folder, e)) + "/").ToList();
+            .Select(e => Path.GetFullPath(Path.Combine(folder, e)) + Path.DirectorySeparatorChar).ToList();
         var registry = new SiteRegistry([]);
         foreach (var markup in Directory.EnumerateFiles(folder, "*.as?x", SearchOption.AllDirectories))
-            if (!markup.Contains("/obj/") && !excluded.Any(e => markup.StartsWith(e, StringComparison.Ordinal))
+            if (!markup.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}") && !excluded.Any(e => markup.StartsWith(e, StringComparison.Ordinal))
                 && Path.GetExtension(markup).ToLowerInvariant() is ".aspx" or ".ascx")
                 registry.SiteFor(markup)?.EnsureMarkup(markup);
 

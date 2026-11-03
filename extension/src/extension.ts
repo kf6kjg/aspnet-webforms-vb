@@ -6,6 +6,7 @@
 // `' lang=` markers (sqlmarker.ts, langmarker.ts).
 
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 import * as vscode from "vscode";
 import { LanguageClient, LanguageClientOptions, ServerOptions, TransportKind } from "vscode-languageclient/node";
@@ -270,11 +271,11 @@ async function serverCommand(context: vscode.ExtensionContext): Promise<{ comman
 
 /** aspxVb.assemblyFolders with ~ expanded. */
 function assemblyFolders(): string[] {
-  const home = process.env.HOME ?? "";
+  const home = os.homedir();
   return vscode.workspace.getConfiguration("aspxVb").get<string[]>("assemblyFolders", [])
     .map((f) => f.trim())
     .filter((f) => f.length > 0)
-    .map((f) => (f === "~" || f.startsWith("~/") ? path.join(home, f.slice(1)) : f));
+    .map((f) => (f === "~" || f.startsWith("~/") || f.startsWith("~\\") ? path.join(home, f.slice(1)) : f));
 }
 
 async function startLanguageServer(context: vscode.ExtensionContext): Promise<void> {

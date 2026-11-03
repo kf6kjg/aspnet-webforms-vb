@@ -20,7 +20,7 @@ public static class Check
         folder = Path.GetFullPath(folder);
         var excluded = (Environment.GetEnvironmentVariable("SCAN_EXCLUDE") ?? "")
             .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Select(e => Path.GetFullPath(Path.Combine(folder, e)) + "/").ToList();
+            .Select(e => Path.GetFullPath(Path.Combine(folder, e)) + Path.DirectorySeparatorChar).ToList();
         var registry = new SiteRegistry((Environment.GetEnvironmentVariable("ASPXVB_ASSEMBLY_FOLDERS") ?? "")
             .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
         var features = new LanguageFeatures();

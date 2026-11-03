@@ -125,6 +125,12 @@ file-template extension.
   marker, which a code action suggests. `OnClientClick=` in markup is JavaScript. On the
   real sites: 5,721 HTML, 2,887 JavaScript and 290 CSS statements highlighted, with the
   grammars and the statement rules agreeing on every line.
+- [x] Windows path handling (the project director's decision,
+  [ADR 0012](docs/adr/0012-windows-and-reference-case.md)): the same `.vsix` runs on
+  Linux and Windows, and every lookup uses the on-disk spelling. A `CodeFile=`,
+  `@Register Src=` or URL whose case differs from disk is a warning. On the real sites:
+  5,899 such references in 1,257 files, from 55 distinct ones, nearly all `/styles/` and
+  `/scripts/` against `Styles` and `Scripts` on disk. Not yet run on real Windows.
 - Stage 3 against the real sites (`mise run server:check`): 22 sites and 1,628 markup files
   compile. Every error reported on a live page is a real bug in that page (undeclared
   variables, `Handles` on controls that no longer exist, unfinished statements). Opening a

@@ -17,7 +17,7 @@ const files: Record<string, string> = {
   "/site/Good.aspx": [
     '<%@ Page Language="VB" AutoEventWireup="false" CodeFile="Good.aspx.vb" Inherits="Good" %>',
     '<%@ Register TagPrefix="uc1" TagName="Header" Src="~/Header.ascx" %>',
-    '<link href="/Styles/site.css" rel="stylesheet" />',
+    '<link href="/styles/Site.css" rel="stylesheet" />',
     '<uc1:Header id="Header1" runat="server"></uc1:Header>',
     '<asp:Button ID="btnGo" runat="server" OnClick="btnGo_Click" OnClientClick="return check();" />',
     "<p>Pasted from Word<o:p></o:p></p>",
@@ -29,6 +29,13 @@ const files: Record<string, string> = {
     '<%@ Register TagPrefix="uc1" TagName="Footer" Src="~/Footer.ascx" %>',
     '<uc1:Header id="Header1" runat="server"></uc1:Header>',
     '<img src="/images/missing.png" />',
+  ].join("\n"),
+  "/site/Controls/Footer.ascx": "",
+  "/site/Controls/Cased.aspx": [
+    '<%@ Page Language="VB" AutoEventWireup="false" CodeFile="../good.aspx.vb" Inherits="Good" %>',
+    '<%@ Register TagPrefix="uc1" TagName="Footer" Src="~/controls/footer.ascx" %>',
+    '<link href="/Styles/site.css?v=2" rel="stylesheet" /> <a href="./Footer.ascx">same</a>',
+    '<asp:Button ID="btnGo" runat="server" OnClick="btnGo_Click" />',
   ].join("\n"),
   "/site/Sample.aspx.cs": "public partial class Sample : System.Web.UI.Page { }",
   "/site/Sample.aspx": '<%@ Page Language="C#" CodeFile="Sample.aspx.cs" Inherits="Other" %>\n<asp:Button ID="b" runat="server" OnClick="Gone_Click" />',
@@ -52,7 +59,7 @@ async function check(file: string, missingFiles = true) {
   return problems.map((p) => `${p.severity} ${p.code} ${files[file].slice(p.span.start, p.span.end)}`);
 }
 
-test("a correct page has no problems (case-insensitive paths, Word tags, external and server-built URLs, server comments)", async () => {
+test("a correct page has no problems (Word tags, external and server-built URLs, server comments)", async () => {
   assert.deepEqual(await check("/site/Good.aspx"), []);
 });
 
@@ -67,6 +74,22 @@ test("broken references are errors; a missing local file is a warning", async ()
 
 test("Inherits naming a class the code-behind doesn't declare, and OnClick naming a missing Sub", async () => {
   assert.deepEqual(await check("/site/WrongClass.aspx"), ["error missing-class Other", "error missing-handler Gone_Click"]);
+});
+
+test("a reference whose case differs from disk resolves, with a warning that spells it as on disk", async () => {
+  assert.deepEqual(await check("/site/Controls/Cased.aspx"), [
+    "warning case-mismatch ../good.aspx.vb",
+    "warning case-mismatch ~/controls/footer.ascx",
+    "warning case-mismatch /Styles/site.css?v=2",
+  ]);
+  const messages = (await checkMarkup(host, "/site/Controls/Cased.aspx", files["/site/Controls/Cased.aspx"], { missingFiles: true })).map((p) => p.message);
+  assert.match(messages[0], /\('\.\.\/Good\.aspx\.vb'\)/);
+  assert.match(messages[1], /\('~\/Controls\/Footer\.ascx'\)/);
+  assert.match(messages[2], /\('\/styles\/Site\.css'\)/);
+});
+
+test("case warnings on URLs are turned off with missing-file warnings", async () => {
+  assert.ok(!(await check("/site/Controls/Cased.aspx", false)).some((p) => p.includes("site.css")));
 });
 
 test("missing-file warnings can be turned off", async () => {

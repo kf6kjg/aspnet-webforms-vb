@@ -5,7 +5,7 @@
 import * as path from "node:path";
 import { Span, attr, findControl, isEventHandlerAttr, isServerTag, mainDirective, maskServerBlocks, registrations, directives, tags, within } from "./markup";
 import { findClass, findMethod, handlersOf, handlesAt } from "./vbcode";
-import { DirReader, findSiteRoot, markupForCodeBehind, resolveOnDisk, resolveReference } from "./paths";
+import { DirReader, findSiteRoot, markupForCodeBehind, resolveOnDisk, resolveReference, respelled } from "./paths";
 
 export interface Host extends DirReader {
   /** File text, or undefined if it can't be read. */
@@ -24,10 +24,25 @@ export interface Jump {
   targets: Target[];
 }
 
-export async function resolveRef(host: Host, ref: string, file: string): Promise<string | undefined> {
-  const dir = path.dirname(file);
+export interface Resolved {
+  file: string;
+  /** `ref` spelled as the file is named on disk, when its case differs. */
+  respelled?: string;
+}
+
+/** Where `ref`, written in `file`, points on disk. */
+export async function locateRef(host: Host, ref: string, file: string): Promise<Resolved | undefined> {
+  // From the on-disk spelling of the file's own folder, so only the reference's case is judged.
+  const dir = (await resolveOnDisk(host, path.dirname(file))) ?? path.dirname(file);
   const siteRoot = ref.startsWith("~") || ref.startsWith("/") ? await findSiteRoot(host, dir) : undefined;
-  return resolveOnDisk(host, resolveReference(ref, dir, siteRoot));
+  const wanted = path.resolve(resolveReference(ref, dir, siteRoot));
+  const found = await resolveOnDisk(host, wanted);
+  if (!found) return undefined;
+  return found === wanted ? { file: found } : { file: found, respelled: respelled(ref, found) };
+}
+
+export async function resolveRef(host: Host, ref: string, file: string): Promise<string | undefined> {
+  return (await locateRef(host, ref, file))?.file;
 }
 
 /** The code-behind named by CodeFile=, falling back to "<markup>.vb". */

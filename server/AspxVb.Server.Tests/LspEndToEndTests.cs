@@ -45,6 +45,13 @@ public class LspEndToEndTests
             await gotDiagnostics.Task.WaitAsync(TimeSpan.FromSeconds(60));
             Assert.Equal(0, published[uri].GetArrayLength());
 
+            // A URI spelled differently from disk (VS Code on Windows keeps the spelling a folder was opened with) is the same file.
+            var helpers = new Uri(Sample.File(Path.Combine("app_code", "texthelpers.vb"))).AbsoluteUri;
+            var helpersText = File.ReadAllText(Sample.File(Path.Combine("App_Code", "TextHelpers.vb")));
+            await rpc.NotifyWithParameterObjectAsync("textDocument/didOpen", new { textDocument = new { uri = helpers, languageId = "vb", version = 1, text = helpersText } });
+            for (var waited = 0; !published.ContainsKey(helpers) && waited < 60_000; waited += 50) await Task.Delay(50);
+            Assert.Equal(0, published[helpers].GetArrayLength());
+
             var offset = Sample.At(text, "TextHelpers.Clean(txtName.");
             var line = text[..offset].Count(c => c == '\n');
             var character = offset - (text.LastIndexOf('\n', offset - 1) + 1);

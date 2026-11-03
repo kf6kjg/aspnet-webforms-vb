@@ -1,22 +1,23 @@
 // Markup reference checks: the stage 2 resolvers, reported as problems when they miss.
 // Errors are references ASP.NET refuses to compile; warnings are local files a browser
-// would get a 404 for. Anything inside VB code is left to the language server (stage 3),
+// would get a 404 for, and references whose case differs from the file on disk, which
+// a case-sensitive server wouldn't find (ADR 0012). Anything inside VB code is left to the language server (stage 3),
 // which reports it as the compiler does. No vscode imports.
 
 import * as path from "node:path";
 import { Span, attr, isEventHandlerAttr, isServerTag, mainDirective, maskServerBlocks, directives, tags } from "./markup";
 import { findClass, findMethod } from "./vbcode";
-import { Host, localPath, resolveRef, urlAttrs } from "./navigation";
+import { Host, Resolved, localPath, locateRef, urlAttrs } from "./navigation";
 
 export interface Problem {
   span: Span;
   severity: "error" | "warning";
-  code: "missing-codefile" | "missing-class" | "missing-register-src" | "unregistered-tag" | "missing-handler" | "missing-file";
+  code: "missing-codefile" | "missing-class" | "missing-register-src" | "unregistered-tag" | "missing-handler" | "missing-file" | "case-mismatch";
   message: string;
 }
 
 export interface CheckOptions {
-  /** Report missing href/src/…Url files (warnings). */
+  /** Report missing href/src/…Url files, and their case mismatches (warnings). */
   missingFiles: boolean;
 }
 
@@ -32,6 +33,11 @@ function cached(host: Host): Host {
   };
 }
 
+function caseProblem(span: Span, ref: string, found: Resolved): Problem[] {
+  if (!found.respelled || found.respelled === ref) return [];
+  return [{ span, severity: "warning", code: "case-mismatch", message: `'${ref}' differs in case from the file on disk ('${found.respelled}'); a case-sensitive server wouldn't find it.` }];
+}
+
 export async function checkMarkup(baseHost: Host, file: string, text: string, options: CheckOptions): Promise<Problem[]> {
   const host = cached(baseHost);
   const problems: Problem[] = [];
@@ -43,7 +49,9 @@ export async function checkMarkup(baseHost: Host, file: string, text: string, op
   const main = mainDirective(text);
   const codeFile = main && attr(main.attrs, "CodeFile");
   if (codeFile) {
-    const target = await resolveRef(host, codeFile.value, file);
+    const found = await locateRef(host, codeFile.value, file);
+    const target = found?.file;
+    if (found) problems.push(...caseProblem(codeFile.valueSpan, codeFile.value, found));
     code = target && (await host.readText(target));
     codeName = target && path.basename(target);
     if (code && !/\.vb$/i.test(target!)) {
@@ -63,9 +71,10 @@ export async function checkMarkup(baseHost: Host, file: string, text: string, op
   const registers = all.filter((d) => d.name.toLowerCase() === "register");
   for (const d of registers) {
     const src = attr(d.attrs, "Src");
-    if (src && !(await resolveRef(host, src.value, file))) {
-      problems.push({ span: src.valueSpan, severity: "error", code: "missing-register-src", message: `User control '${src.value}' not found.` });
-    }
+    if (!src) continue;
+    const found = await locateRef(host, src.value, file);
+    if (found) problems.push(...caseProblem(src.valueSpan, src.value, found));
+    else problems.push({ span: src.valueSpan, severity: "error", code: "missing-register-src", message: `User control '${src.value}' not found.` });
   }
 
   const masked = maskServerBlocks(text);
@@ -92,9 +101,9 @@ export async function checkMarkup(baseHost: Host, file: string, text: string, op
       }
       if (options.missingFiles && urlAttrs.has(a.name.toLowerCase())) {
         const ref = localPath(text.slice(a.valueSpan.start, a.valueSpan.end));
-        if (ref && !(await resolveRef(host, ref, file))) {
-          problems.push({ span: a.valueSpan, severity: "warning", code: "missing-file", message: `File '${ref}' not found in the site.` });
-        }
+        const found = ref && (await locateRef(host, ref, file));
+        if (found) problems.push(...caseProblem(a.valueSpan, ref!, found));
+        else if (ref) problems.push({ span: a.valueSpan, severity: "warning", code: "missing-file", message: `File '${ref}' not found in the site.` });
       }
     }
   }

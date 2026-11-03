@@ -28,7 +28,7 @@ public static class WebReferences
             try
             {
                 var folder = Path.GetRelativePath(dir, Path.GetDirectoryName(wsdl)!);
-                code = new Generator(wsdl, folder == "." ? "" : folder.Replace('/', '.')).Run();
+                code = new Generator(wsdl, folder == "." ? "" : folder.Replace(Path.DirectorySeparatorChar, '.')).Run();
             }
             catch (Exception e)
             {

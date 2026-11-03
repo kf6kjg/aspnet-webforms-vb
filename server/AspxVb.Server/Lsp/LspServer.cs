@@ -20,6 +20,7 @@ public sealed class LspServer
     private readonly ConcurrentDictionary<string, bool> _missingAssembliesReported = new(StringComparer.Ordinal);
     private readonly LanguageFeatures _features = new();
     private readonly ConcurrentDictionary<string, string> _openFiles = new(StringComparer.Ordinal); // path -> uri
+    private readonly ConcurrentDictionary<string, string> _paths = new(StringComparer.Ordinal); // uri -> path on disk
     private readonly ConcurrentDictionary<string, CancellationTokenSource> _pendingDiagnostics = new(StringComparer.Ordinal);
 
     private LspServer(Stream input, Stream output)
@@ -140,7 +141,7 @@ public sealed class LspServer
                 await Task.Delay(400, cts.Token);
                 foreach (var (path, uri) in _openFiles.ToArray())
                 {
-                    if (!path.EndsWith(".vb", StringComparison.OrdinalIgnoreCase) || !path.StartsWith(site.Root + "/", StringComparison.Ordinal)) continue;
+                    if (!path.EndsWith(".vb", StringComparison.OrdinalIgnoreCase) || !path.StartsWith(site.Root + Path.DirectorySeparatorChar, StringComparison.Ordinal)) continue;
                     var doc = site.GetDocument(path);
                     var problems = doc == null ? [] : await _features.DiagnosticsAsync(doc, cts.Token);
                     cts.Token.ThrowIfCancellationRequested();
@@ -300,8 +301,15 @@ public sealed class LspServer
 
     // ---- helpers ----
 
-    private static string? PathOf(string uri) =>
-        Uri.TryCreate(uri, UriKind.Absolute, out var u) && u.IsFile ? u.LocalPath : null;
+    /// <summary>The file's path as spelled on disk, so it matches the paths the sites find themselves (ADR 0012).</summary>
+    private string? PathOf(string uri)
+    {
+        if (_paths.TryGetValue(uri, out var known)) return known;
+        if (!Uri.TryCreate(uri, UriKind.Absolute, out var u) || !u.IsFile) return null;
+        // A file not saved yet keeps its URI's spelling, and is looked up again once it exists.
+        if (FileText.OnDisk(u.LocalPath) is not { } path) return u.LocalPath;
+        return _paths[uri] = path;
+    }
 
     private static object Range(Features.Span s) => new
     {
