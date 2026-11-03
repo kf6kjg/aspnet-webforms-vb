@@ -111,6 +111,12 @@ file-template extension.
 - [x] Automatic block ends on Enter (`End If`, `End Sub`, `Next`, `End Try`, …), as in Visual
   Studio, including Enter after `Then` turning a one-line `If` into a block
   ([ADR 0009](docs/adr/0009-automatic-end-constructs.md)).
+- [x] SQL highlighting in VB strings (the project director's decision,
+  [ADR 0010](docs/adr/0010-sql-highlighting-in-vb-strings.md)): `SQLCmd = …` statements
+  automatically, other variables after a `' lang=sql` / `tsql` / `mysql` / `pgsql` marker
+  line, and a code action that suggests the marker. On the real sites (`mise run
+  ext:smoke`): 11,956 SQL statements in 1,819 `.vb` files highlighted, with the grammar
+  and the code action's statement rules agreeing on every line.
 - Stage 3 against the real sites (`mise run server:check`): 22 sites and 1,628 markup files
   compile. Every error reported on a live page is a real bug in that page (undeclared
   variables, `Handles` on controls that no longer exist, unfinished statements). Opening a

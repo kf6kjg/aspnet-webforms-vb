@@ -21,7 +21,8 @@ developer's code bases and hardcodes their conventions.
     `asp:RadioButtonList`, `asp:HiddenField`, `asp:FileUpload`, `asp:ImageButton`,
     `asp:GridView`, `asp:TemplateField`, `runat-td`, `runat-tr`, `runat-span`,
     `runat-div`, `runat-hidden`
-  - VB code-behind: `codebehind-page`, `codebehind-control`, `pageload`, `handles`
+  - VB code-behind: `codebehind-page`, `codebehind-control`, `pageload`, `handles`,
+    `lang=sql`
 - Toggle-comment uses `<%-- --%>`.
 
 ## What works (stage 2): navigation
@@ -119,6 +120,34 @@ DLL (from NuGet or the server's GAC), put it in a folder outside the site, and l
 folder in the `aspxVb.assemblyFolders` setting. The full steps are in
 `MISSING-ASSEMBLIES.md`, which the **How to fix** button opens.
 
+## SQL in VB strings
+
+The strings that build a query are highlighted as SQL: keywords, functions, `'literals'`,
+`[names]` and `` `names` ``, `@parameters`, numbers and operators. The string keeps its
+string color, and the SQL stands out inside it. This needs no language server.
+
+- **Automatic:** any statement that starts with `SQLCmd =` (or `SQLCmd2 =`, …), through
+  the last line of the statement, as in
+  `SQLCmd = "Select Name " +` / `"From control " +` / `"Where ID=" + MyDB.SQLNo(x)`.
+- **Other variables:** put a marker comment on the line just above the statement:
+
+  ```vb
+  ' lang=sql
+  tWhere = " and Language=" + MyDB.SQLStr(tLang)
+  ```
+
+  The marker names the dialect: `sql` (generic), `tsql`, `mysql` or `pgsql`. A marker
+  above a `SQLCmd` statement replaces the automatic generic dialect. The `lang=sql`
+  snippet inserts one.
+- **Suggestions:** when the cursor is on a statement whose strings look like SQL, the
+  lightbulb offers **Mark as SQL** and adds the marker. On a `SQLCmd` statement (or a
+  `lang=sql` one) that uses T-SQL or MySQL syntax, such as `Top 10`, `GetDate()`,
+  `Limit 5` or `IfNull()`, it offers **Mark as SQL (T-SQL)** / **(MySQL)**. Log messages
+  like `"Insert Page record: "` aren't suggested.
+
+The dialects differ only in a few rules. For example, `#` starts a comment only with
+`lang=mysql`, because in T-SQL it names a temporary table.
+
 ## Not yet
 
 - Signature help (parameter info while typing a call).
@@ -137,7 +166,9 @@ From the repo root: `mise run ext:install-deps`, then:
 - `mise run server:test`: language server tests
 - `mise run ext:smoke`: runs over every real site under `$SITES_ROOT`, read-only.
   It tokenizes every markup file and reports any `%>` the grammar loses, then tries
-  every navigation target and reports the ones that don't resolve.
+  every navigation target and reports the ones that don't resolve. Last, it tokenizes
+  every `.vb` file and reports any line where the SQL highlighting and the code action's
+  statement rules disagree.
 - `mise run ext:package`: builds `extension/dist/*.vsix`
 
-To install the build: `code --install-extension extension/dist/aspnet-webforms-vb-0.8.2.vsix`.
+To install the build: `code --install-extension extension/dist/aspnet-webforms-vb-0.9.0.vsix`.

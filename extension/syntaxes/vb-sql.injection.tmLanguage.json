@@ -1,0 +1,169 @@
+{
+  "$comment": "SQL in VB string literals (ADR 0010). A statement starting a line with `SQLCmd =` is SQL (generic dialect) through the end of the statement; a comment line `' lang=<dialect>` marks the statement below it. A statement ends at a comment or at a line whose last character isn't a continuation token (+ & _ , ( =), which is exact for VB 10. SQL coloring stays inside each string fragment, so the VB string always closes. The marked rules come first and the selector skips existing SQL regions, so a marker wins over the SQLCmd default.",
+  "scopeName": "source.vb.sql-injection",
+  "injectionSelector": "L:source.asp.vb.net -comment -string -meta.sql-statement.vb",
+  "patterns": [
+    { "include": "#marked-tsql" },
+    { "include": "#marked-mysql" },
+    { "include": "#marked-pgsql" },
+    { "include": "#marked-sql" },
+    { "include": "#sqlcmd-statement" }
+  ],
+  "repository": {
+    "sqlcmd-statement": {
+      "begin": "(?i)^[ \\t]*(SQLCmd\\d*)\\b(?=[ \\t]*=)",
+      "beginCaptures": { "1": { "name": "variable.other.asp" } },
+      "end": "(?<![+&_,(=\\s])[ \\t]*$|(?=')",
+      "name": "meta.sql-statement.vb",
+      "patterns": [{ "include": "#body-sql" }]
+    },
+    "marked-sql": {
+      "begin": "(?i)^[ \\t]*((')[ \\t]*(lang(?:uage)?[ \\t]*=[ \\t]*sql)\\b.*)\\n",
+      "beginCaptures": {
+        "1": { "name": "comment.line.apostrophe.asp" },
+        "2": { "name": "punctuation.definition.comment.asp" },
+        "3": { "name": "keyword.other.language-marker.vb" }
+      },
+      "end": "(?<![+&_,(=\\s])[ \\t]*$|(?=')",
+      "name": "meta.sql-statement.vb",
+      "patterns": [{ "include": "#body-sql" }]
+    },
+    "marked-tsql": {
+      "begin": "(?i)^[ \\t]*((')[ \\t]*(lang(?:uage)?[ \\t]*=[ \\t]*(?:tsql|mssql))\\b.*)\\n",
+      "beginCaptures": {
+        "1": { "name": "comment.line.apostrophe.asp" },
+        "2": { "name": "punctuation.definition.comment.asp" },
+        "3": { "name": "keyword.other.language-marker.vb" }
+      },
+      "end": "(?<![+&_,(=\\s])[ \\t]*$|(?=')",
+      "name": "meta.sql-statement.vb",
+      "patterns": [{ "include": "#body-tsql" }]
+    },
+    "marked-mysql": {
+      "begin": "(?i)^[ \\t]*((')[ \\t]*(lang(?:uage)?[ \\t]*=[ \\t]*(?:mysql|mariadb))\\b.*)\\n",
+      "beginCaptures": {
+        "1": { "name": "comment.line.apostrophe.asp" },
+        "2": { "name": "punctuation.definition.comment.asp" },
+        "3": { "name": "keyword.other.language-marker.vb" }
+      },
+      "end": "(?<![+&_,(=\\s])[ \\t]*$|(?=')",
+      "name": "meta.sql-statement.vb",
+      "patterns": [{ "include": "#body-mysql" }]
+    },
+    "marked-pgsql": {
+      "begin": "(?i)^[ \\t]*((')[ \\t]*(lang(?:uage)?[ \\t]*=[ \\t]*(?:pgsql|postgresql|postgres))\\b.*)\\n",
+      "beginCaptures": {
+        "1": { "name": "comment.line.apostrophe.asp" },
+        "2": { "name": "punctuation.definition.comment.asp" },
+        "3": { "name": "keyword.other.language-marker.vb" }
+      },
+      "end": "(?<![+&_,(=\\s])[ \\t]*$|(?=')",
+      "name": "meta.sql-statement.vb",
+      "patterns": [{ "include": "#body-pgsql" }]
+    },
+
+    "body-sql": { "patterns": [{ "include": "#string-sql" }, { "include": "source.asp.vb.net" }] },
+    "body-tsql": { "patterns": [{ "include": "#string-tsql" }, { "include": "source.asp.vb.net" }] },
+    "body-mysql": { "patterns": [{ "include": "#string-mysql" }, { "include": "source.asp.vb.net" }] },
+    "body-pgsql": { "patterns": [{ "include": "#string-pgsql" }, { "include": "source.asp.vb.net" }] },
+
+    "string-sql": {
+      "$comment": "Generic: every dialect's rules except MySQL's # comment, since # also names a T-SQL temporary table.",
+      "begin": "\"",
+      "beginCaptures": { "0": { "name": "punctuation.definition.string.begin.asp" } },
+      "end": "\"(?!\")|$",
+      "endCaptures": { "0": { "name": "punctuation.definition.string.end.asp" } },
+      "name": "string.quoted.double.asp",
+      "contentName": "meta.sql-fragment.vb",
+      "patterns": [
+        { "include": "#fragment-start" },
+        { "include": "#tsql-only" },
+        { "include": "#mysql-only" },
+        { "include": "#pgsql-only" },
+        { "include": "#common" }
+      ]
+    },
+    "string-tsql": {
+      "begin": "\"",
+      "beginCaptures": { "0": { "name": "punctuation.definition.string.begin.asp" } },
+      "end": "\"(?!\")|$",
+      "endCaptures": { "0": { "name": "punctuation.definition.string.end.asp" } },
+      "name": "string.quoted.double.asp",
+      "contentName": "meta.sql-fragment.vb",
+      "patterns": [{ "include": "#fragment-start" }, { "include": "#tsql-only" }, { "include": "#common" }]
+    },
+    "string-mysql": {
+      "begin": "\"",
+      "beginCaptures": { "0": { "name": "punctuation.definition.string.begin.asp" } },
+      "end": "\"(?!\")|$",
+      "endCaptures": { "0": { "name": "punctuation.definition.string.end.asp" } },
+      "name": "string.quoted.double.asp",
+      "contentName": "meta.sql-fragment.vb",
+      "patterns": [
+        { "include": "#fragment-start" },
+        { "match": "#[^\"]*", "name": "comment.line.number-sign.sql" },
+        { "include": "#mysql-only" },
+        { "include": "#common" }
+      ]
+    },
+    "string-pgsql": {
+      "begin": "\"",
+      "beginCaptures": { "0": { "name": "punctuation.definition.string.begin.asp" } },
+      "end": "\"(?!\")|$",
+      "endCaptures": { "0": { "name": "punctuation.definition.string.end.asp" } },
+      "name": "string.quoted.double.asp",
+      "contentName": "meta.sql-fragment.vb",
+      "patterns": [{ "include": "#fragment-start" }, { "include": "#pgsql-only" }, { "include": "#common" }]
+    },
+
+    "fragment-start": {
+      "$comment": "Rules that must win over the dialect sets: the VB quote escape, SQL literals that close within the fragment, and -- comments.",
+      "patterns": [
+        { "match": "\"\"", "name": "constant.character.escape.apostrophe.asp" },
+        { "match": "(?i)N?'[^'\"]*'", "name": "string.quoted.single.sql" },
+        { "match": "--[^\"]*", "name": "comment.line.double-dash.sql" }
+      ]
+    },
+    "tsql-only": {
+      "patterns": [
+        { "match": "\\[[^\\]\"]*\\]", "name": "variable.other.quoted.bracket.sql" },
+        { "match": "@@\\w+", "name": "variable.language.sql" },
+        { "match": "(?i)\\b(?:top|exec|execute|output|identity|nolock|merge|pivot|unpivot)\\b", "name": "keyword.other.sql" }
+      ]
+    },
+    "mysql-only": {
+      "patterns": [
+        { "match": "`[^`\"]*`", "name": "variable.other.quoted.backtick.sql" },
+        { "match": "(?i)\\b(?:limit|offset|ignore|duplicate|auto_increment|engine|regexp|rlike|straight_join|interval|replace|call|show|describe)\\b", "name": "keyword.other.sql" }
+      ]
+    },
+    "pgsql-only": {
+      "patterns": [
+        { "match": "\\$\\d+", "name": "variable.parameter.sql" },
+        { "match": "::", "name": "keyword.operator.cast.sql" },
+        { "match": "(?i)\\b(?:limit|offset|returning|ilike|similar)\\b", "name": "keyword.other.sql" }
+      ]
+    },
+    "common": {
+      "patterns": [
+        { "match": "@\\w+", "name": "variable.parameter.sql" },
+        {
+          "match": "(?i)\\b(?:int|integer|bigint|smallint|tinyint|mediumint|decimal|numeric|varchar|nchar|nvarchar|ntext|longtext|mediumtext|datetime|datetime2|boolean|blob|longblob|uniqueidentifier)\\b",
+          "name": "storage.type.sql"
+        },
+        {
+          "$comment": "A name directly followed by ( is a function, except keywords that take a list or subquery, and table names after Into / Table.",
+          "match": "(?i)(?<!\\binto\\s)(?<!\\btable\\s)\\b(?!(?:in|values|exists|and|or|not|on|as|when|then|else|from|where|join|into|select|using|by|is|like|between|all|any|some|union|having|table|key|references|with|over|case|set|returning|output|top|limit|ignore|default|unique|engine)\\b)[a-z_][a-z0-9_]*(?=\\()",
+          "name": "support.function.sql"
+        },
+        {
+          "match": "(?i)\\b(?:select|distinct|from|where|and|or|not|in|is|like|between|exists|order|group|by|having|asc|desc|insert|into|values|update|set|delete|join|inner|left|right|outer|full|cross|on|using|as|case|when|then|else|end|union|all|any|some|create|table|alter|add|drop|column|index|view|truncate|primary|key|foreign|references|constraint|unique|default|with|if|begin|declare)\\b",
+          "name": "keyword.other.sql"
+        },
+        { "match": "(?i)\\b(?:null|true|false)\\b", "name": "constant.language.sql" },
+        { "match": "\\b\\d+(?:\\.\\d+)?\\b", "name": "constant.numeric.sql" },
+        { "match": "<>|<=|>=|!=|=|<|>|\\*", "name": "keyword.operator.sql" }
+      ]
+    }
+  }
+}

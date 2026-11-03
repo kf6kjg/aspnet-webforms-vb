@@ -2,7 +2,7 @@
   "name": "aspnet-webforms-vb",
   "displayName": "ASP.NET Web Forms (VB) for Web Site projects",
   "description": "Highlighting, snippets, navigation and IntelliSense for legacy ASP.NET Web Forms Web Site projects in VB.NET (.aspx, .ascx, .master, code-behind).",
-  "version": "0.8.2",
+  "version": "0.9.0",
   "publisher": "kf6kjg",
   "private": true,
   "license": "MIT",
@@ -39,6 +39,13 @@
           "source.css": "css",
           "source.js": "javascript"
         }
+      },
+      {
+        "scopeName": "source.vb.sql-injection",
+        "path": "./syntaxes/vb-sql.injection.tmLanguage.json",
+        "injectTo": [
+          "source.asp.vb.net"
+        ]
       }
     ],
     "snippets": [

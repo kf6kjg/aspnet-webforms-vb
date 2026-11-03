@@ -2,6 +2,7 @@
 // checks, and the Visual Studio style View Code (F7) / View Markup (Shift+F7) commands;
 // the logic lives in navigation.ts and diagnostics.ts. Stage 3: starts the language server
 // (server/AspxVb.Server) for completion, diagnostics, definition and hover in VB files.
+// SQL in VB strings: the code action that suggests `' lang=` markers (sqlmarker.ts).
 
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -9,6 +10,7 @@ import * as vscode from "vscode";
 import { LanguageClient, LanguageClientOptions, ServerOptions, TransportKind } from "vscode-languageclient/node";
 import { Host, Jump, codeBehindFor, definitionInCodeBehind, definitionInMarkup, markupFor } from "./navigation";
 import { checkMarkup } from "./diagnostics";
+import { dialectNames, suggestMarker } from "./sqlmarker";
 
 let client: LanguageClient | undefined;
 
@@ -140,7 +142,41 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
   );
   registerEndConstructs(context);
+  registerSqlMarkers(context);
   void startLanguageServer(context);
+}
+
+/**
+ * Lightbulb on a statement whose strings look like SQL: add the `' lang=<dialect>`
+ * marker above it, or narrow `lang=sql` / the SQLCmd default to the dialect its syntax
+ * shows (ADR 0010). The highlighting itself is the grammar's.
+ */
+function registerSqlMarkers(context: vscode.ExtensionContext): void {
+  const kind = vscode.CodeActionKind.RefactorRewrite;
+  context.subscriptions.push(
+    vscode.languages.registerCodeActionsProvider({ language: "vb" }, {
+      provideCodeActions(doc, range) {
+        // Statements are short; a window around the cursor avoids splitting the whole file on every move.
+        const from = Math.max(0, range.start.line - 250);
+        const to = Math.min(doc.lineCount, range.start.line + 250);
+        const lines: string[] = [];
+        for (let i = from; i < to; i++) lines.push(doc.lineAt(i).text);
+        const eol = doc.eol === vscode.EndOfLine.CRLF ? "\r\n" : "\n";
+        return suggestMarker(lines, range.start.line - from).map((s) => {
+          const action = new vscode.CodeAction(s.dialect === "sql" ? "Mark as SQL" : `Mark as SQL (${dialectNames[s.dialect]})`, kind);
+          action.isPreferred = s.preferred;
+          action.edit = new vscode.WorkspaceEdit();
+          if (s.replace) {
+            const line = s.replace.line + from;
+            action.edit.replace(doc.uri, new vscode.Range(line, s.replace.start, line, s.replace.end), s.text);
+          } else {
+            action.edit.insert(doc.uri, new vscode.Position(s.insertAbove! + from, 0), s.text + eol);
+          }
+          return action;
+        });
+      },
+    }, { providedCodeActionKinds: [kind] }),
+  );
 }
 
 /**

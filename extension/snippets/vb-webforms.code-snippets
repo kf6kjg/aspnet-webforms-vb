@@ -43,5 +43,13 @@
       "\t$0",
       "End Sub"
     ]
+  },
+  "SQL marker": {
+    "prefix": "lang=sql",
+    "description": "Highlight the strings of the next statement as SQL (SQLCmd = … statements are SQL without it)",
+    "body": [
+      "' lang=${1|sql,tsql,mysql,pgsql|}",
+      "$0"
+    ]
   }
 }

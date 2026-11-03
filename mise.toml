@@ -50,9 +50,10 @@ description = "Compile every page of every site under $SITES_ROOT (read-only) an
 run = "dotnet run --project server/AspxVb.Server -c Release -- --check \"$SITES_ROOT\""
 
 [tasks."ext:smoke"]
-description = "Run grammar and navigation over every real site under $SITES_ROOT (read-only) and report breakage"
+description = "Run grammar, navigation and SQL highlighting over every real site under $SITES_ROOT (read-only) and report breakage"
 dir = "extension"
 run = [
   "node test/smoke-real-files.mjs \"$SITES_ROOT\"",
   "npm run compile --silent && node out/test/smoke-navigation.js \"$SITES_ROOT\"",
+  "node test/smoke-sql.mjs \"$SITES_ROOT\"",
 ]
