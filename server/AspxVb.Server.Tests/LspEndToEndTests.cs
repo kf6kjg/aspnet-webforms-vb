@@ -52,6 +52,21 @@ public class LspEndToEndTests
                 new { textDocument = new { uri }, position = new { line, character } });
             Assert.Contains(list.GetProperty("items").EnumerateArray(), i => i.GetProperty("label").GetString() == "Text");
 
+            // Enter after "if IsPostBack then": the line is pretty-listed, and End If comes from its own request.
+            var typed = text.Replace("  lblResult.Text = TextHelpers.Clean(txtName.Text)\n", "  lblResult.Text = TextHelpers.Clean(txtName.Text)\n  if ispostback then\n   \n");
+            await rpc.NotifyWithParameterObjectAsync("textDocument/didChange",
+                new { textDocument = new { uri, version = 2 }, contentChanges = new[] { new { text = typed } } });
+            var openerLine = typed.Split('\n').ToList().IndexOf("  if ispostback then");
+            var edits = await rpc.InvokeWithParameterObjectAsync<JsonElement>("textDocument/onTypeFormatting",
+                new { textDocument = new { uri }, position = new { line = openerLine + 1, character = 3 }, ch = "\n", options = new { tabSize = 1, insertSpaces = true } });
+            Assert.Equal(["  If IsPostBack Then"], edits.EnumerateArray().Select(e => e.GetProperty("newText").GetString()));
+            var end = await rpc.InvokeWithParameterObjectAsync<JsonElement>("aspxVb/endConstruct",
+                new { textDocument = new { uri }, position = new { line = openerLine + 1, character = 3 } });
+            Assert.Equal("   \n  End If\n", end.GetProperty("newText").GetString());
+            Assert.Equal(openerLine + 1, end.GetProperty("range").GetProperty("start").GetProperty("line").GetInt32());
+            Assert.Equal(openerLine + 1, end.GetProperty("cursor").GetProperty("line").GetInt32());
+            Assert.Equal(3, end.GetProperty("cursor").GetProperty("character").GetInt32());
+
             await rpc.InvokeWithParameterObjectAsync<JsonElement?>("shutdown");
             await rpc.NotifyAsync("exit");
             Assert.True(process.WaitForExit(10_000));

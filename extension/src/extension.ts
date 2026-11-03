@@ -139,7 +139,48 @@ export function activate(context: vscode.ExtensionContext): void {
       await startLanguageServer(context);
     }),
   );
+  registerEndConstructs(context);
   void startLanguageServer(context);
+}
+
+/**
+ * Enter after a block opener (If … Then, Sub, For, …), including one that splits a
+ * single-line If: ask the server for the missing end, apply its edit, and put the cursor
+ * where it says (ADR 0009). This isn't an on-type formatting edit because VS Code would
+ * shift that insertion onto the cursor and carry the cursor past it.
+ */
+function registerEndConstructs(context: vscode.ExtensionContext): void {
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeTextDocument((e) => {
+      const editor = vscode.window.activeTextEditor;
+      if (!client?.isRunning() || e.document.languageId !== "vb" || e.reason !== undefined) return;
+      if (editor?.document !== e.document || editor.selections.length !== 1 || e.contentChanges.length !== 1) return;
+      const change = e.contentChanges[0];
+      const indent = /^\r?\n([ \t]*)$/.exec(change.text);
+      if (!indent) return;
+      const position = new vscode.Position(change.range.start.line + 1, indent[1].length);
+      // After every listener has seen the change, so the client has queued it ahead of the request.
+      setTimeout(() => void insertEnd(editor, position), 0);
+    }),
+  );
+}
+
+type LspPosition = { line: number; character: number };
+
+async function insertEnd(editor: vscode.TextEditor, position: vscode.Position): Promise<void> {
+  const doc = editor.document;
+  const lineCount = doc.lineCount;
+  const line = doc.lineAt(position.line).text;
+  const edit = await client?.sendRequest<{ range: { start: LspPosition; end: LspPosition }; newText: string; cursor: LspPosition } | null>(
+    "aspxVb/endConstruct",
+    { textDocument: { uri: doc.uri.toString() }, position },
+  );
+  // Pretty listing may re-case the opener meanwhile; give up only if lines moved or the new line was typed on.
+  if (!edit || doc.isClosed || doc.lineCount !== lineCount || doc.lineAt(position.line).text !== line) return;
+  const at = (p: LspPosition): vscode.Position => new vscode.Position(p.line, p.character);
+  if (await editor.edit((b) => b.replace(new vscode.Range(at(edit.range.start), at(edit.range.end)), edit.newText))) {
+    editor.selection = new vscode.Selection(at(edit.cursor), at(edit.cursor));
+  }
 }
 
 const extensionId = "kf6kjg.aspnet-webforms-vb";

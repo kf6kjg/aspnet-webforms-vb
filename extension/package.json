@@ -2,7 +2,7 @@
   "name": "aspnet-webforms-vb",
   "displayName": "ASP.NET Web Forms (VB) for Web Site projects",
   "description": "Highlighting, snippets, navigation and IntelliSense for legacy ASP.NET Web Forms Web Site projects in VB.NET (.aspx, .ascx, .master, code-behind).",
-  "version": "0.6.1",
+  "version": "0.8.2",
   "publisher": "kf6kjg",
   "private": true,
   "license": "MIT",
@@ -120,6 +120,19 @@
           "default": [],
           "markdownDescription": "Folders to search for assemblies a site's `web.config` lists that are in neither its `Bin` nor the .NET Framework, typically ones the web server loads from its GAC, such as `MySql.Data`. `~` means your home folder. See MISSING-ASSEMBLIES.md in the extension."
         }
+      }
+    },
+    "configurationDefaults": {
+      "[vb]": {
+        "editor.formatOnType": true,
+        "editor.tabSize": 1,
+        "editor.insertSpaces": true,
+        "editor.detectIndentation": false
+      },
+      "[aspx-vb]": {
+        "editor.tabSize": 1,
+        "editor.insertSpaces": true,
+        "editor.detectIndentation": false
       }
     }
   },

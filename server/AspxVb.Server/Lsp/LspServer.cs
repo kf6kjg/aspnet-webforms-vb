@@ -64,6 +64,10 @@ public sealed class LspServer
             completionProvider = new { triggerCharacters = new[] { "." }, resolveProvider = true },
             definitionProvider = true,
             hoverProvider = true,
+            documentFormattingProvider = true,
+            documentRangeFormattingProvider = true,
+            // Pretty listing: Enter formats the line just finished (ADR 0008).
+            documentOnTypeFormattingProvider = new { firstTriggerCharacter = "\n" },
         },
         serverInfo = new { name = "aspx-vb", version = typeof(LspServer).Assembly.GetName().Version?.ToString() },
     };
@@ -222,6 +226,71 @@ public sealed class LspServer
         if (Locate(p) is not { } at) return null;
         var markdown = await _features.HoverAsync(at.Document, at.Offset, ct);
         return markdown == null ? null : new { contents = new { kind = "markdown", value = markdown } };
+    }
+
+    // ---- formatting (ADR 0008) ----
+
+    private (Microsoft.CodeAnalysis.Document Document, SourceText Text)? DocumentOf(JsonElement p)
+    {
+        var uri = p.GetProperty("textDocument").GetProperty("uri").GetString()!;
+        if (PathOf(uri) is not { } path || _sites.SiteFor(path) is not { } site || site.GetDocument(path) is not { } doc) return null;
+        return (doc, doc.GetTextAsync().Result);
+    }
+
+    private static int Offset(SourceText text, JsonElement position)
+    {
+        var line = Math.Min(position.GetProperty("line").GetInt32(), text.Lines.Count - 1);
+        return Math.Min(text.Lines[line].Start + position.GetProperty("character").GetInt32(), text.Lines[line].End);
+    }
+
+    private async Task<object> EditsAsync(Microsoft.CodeAnalysis.Document doc, SourceText text, TextSpan span, CancellationToken ct) =>
+        (await Formatting.FormatAsync(doc, span, ct)).Select(c => new { range = RangeOf(text, c.Span), newText = c.NewText }).ToList();
+
+    [JsonRpcMethod("textDocument/formatting")]
+    public async Task<object> FormatDocument(JsonElement p, CancellationToken ct) =>
+        DocumentOf(p) is { } d ? await EditsAsync(d.Document, d.Text, new TextSpan(0, d.Text.Length), ct) : Array.Empty<object>();
+
+    [JsonRpcMethod("textDocument/rangeFormatting")]
+    public async Task<object> FormatRange(JsonElement p, CancellationToken ct)
+    {
+        if (DocumentOf(p) is not { } d) return Array.Empty<object>();
+        var range = p.GetProperty("range");
+        var start = Offset(d.Text, range.GetProperty("start"));
+        var end = Offset(d.Text, range.GetProperty("end"));
+        return await EditsAsync(d.Document, d.Text, TextSpan.FromBounds(start, Math.Max(start, end)), ct);
+    }
+
+    /// <summary>Enter was pressed: format the line that was just finished, as Visual Studio's pretty listing does.</summary>
+    [JsonRpcMethod("textDocument/onTypeFormatting")]
+    public async Task<object> FormatOnType(JsonElement p, CancellationToken ct)
+    {
+        if (DocumentOf(p) is not { } d) return Array.Empty<object>();
+        var line = p.GetProperty("position").GetProperty("line").GetInt32() - 1;
+        if (line < 0 || line >= d.Text.Lines.Count) return Array.Empty<object>();
+        return await EditsAsync(d.Document, d.Text, d.Text.Lines[line].Span, ct);
+    }
+
+    /// <summary>
+    /// Enter was pressed after a block opener: the edit that adds its end (End If, End Sub,
+    /// Next, …) below the cursor's line, and the cursor's new position, or null. This is not
+    /// part of on-type formatting because VS Code shrinks formatting edits to a minimal diff.
+    /// An insertion at the start of the next line then becomes an insertion at the cursor,
+    /// and the cursor ends up after the end (ADR 0009). The extension applies the edit and
+    /// puts the cursor back.
+    /// </summary>
+    [JsonRpcMethod("aspxVb/endConstruct")]
+    public async Task<object?> EndConstruct(JsonElement p, CancellationToken ct)
+    {
+        if (DocumentOf(p) is not { } d) return null;
+        var line = p.GetProperty("position").GetProperty("line").GetInt32() - 1;
+        if (line < 0 || line >= d.Text.Lines.Count) return null;
+        // The opener's indentation after pretty listing; the on-type edit may not have reached us yet.
+        var span = d.Text.Lines[line].Span;
+        var finished = (await Formatting.FormatAsync(d.Document, span, ct)).FirstOrDefault(c => c.Span == span).NewText ?? d.Text.ToString(span);
+        var indent = finished[..(finished.Length - finished.TrimStart(' ', '\t').Length)];
+        if (await d.Document.GetSyntaxRootAsync(ct) is not { } root || EndConstructs.AfterEnter(root, d.Text, line, indent) is not { } end) return null;
+        var cursor = d.Text.WithChanges(end.Change).Lines.GetLinePosition(end.Cursor);
+        return new { range = RangeOf(d.Text, end.Change.Span), newText = end.Change.NewText, cursor = new { line = cursor.Line, character = cursor.Character } };
     }
 
     /// <summary>Text of a generated metadata view (go to definition on a framework or Bin symbol).</summary>

@@ -41,6 +41,10 @@ run = "rm -rf extension/server && dotnet publish server/AspxVb.Server -c Release
 description = "Run the language server tests (against samples/)"
 run = "dotnet test server/AspxVb.Server.Tests"
 
+[tasks."server:format-check"]
+description = "Report what the VB formatter would change in every compiled file under $SITES_ROOT (read-only)"
+run = "dotnet run --project server/AspxVb.Server -c Release -- --format-check \"$SITES_ROOT\""
+
 [tasks."server:check"]
 description = "Compile every page of every site under $SITES_ROOT (read-only) and summarize diagnostics"
 run = "dotnet run --project server/AspxVb.Server -c Release -- --check \"$SITES_ROOT\""

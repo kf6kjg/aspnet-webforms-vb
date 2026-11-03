@@ -103,6 +103,14 @@ file-template extension.
 - [x] Stage 3: web-service proxies generated from `App_WebReferences/*.wsdl` (found by compiling the real sites)
 - [x] Stage 3: language server wired into the extension: completion, diagnostics, go to definition, hover
   ([ADR 0006](docs/adr/0006-language-server-implementation.md))
+- [x] VB pretty listing (the project director's decision,
+  [ADR 0008](docs/adr/0008-vb-pretty-listing.md)): Enter formats the finished line, and
+  Format Document / Format Selection work. One-space indent, VB casing, comments never
+  move, CRLF kept. Measured with `mise run server:format-check`: on the real sites it
+  would change 0.18% of lines, all of them old lines Visual Studio never re-listed.
+- [x] Automatic block ends on Enter (`End If`, `End Sub`, `Next`, `End Try`, …), as in Visual
+  Studio, including Enter after `Then` turning a one-line `If` into a block
+  ([ADR 0009](docs/adr/0009-automatic-end-constructs.md)).
 - Stage 3 against the real sites (`mise run server:check`): 22 sites and 1,628 markup files
   compile. Every error reported on a live page is a real bug in that page (undeclared
   variables, `Handles` on controls that no longer exist, unfinished statements). Opening a
@@ -145,6 +153,7 @@ mise run ext:smoke           # grammar + navigation over every real site under $
 mise run ext:package         # build extension/dist/*.vsix (publishes the server first)
 mise run server:test         # language server unit + end-to-end tests
 mise run server:check        # compile every page of every real site under $SITES_ROOT
+mise run server:format-check # what the VB formatter would change in the real sites
 ```
 
 `mise run scan` needs `SITES_ROOT` (and usually `SITES_DRIVE_MAP` and `SCAN_EXCLUDE`)

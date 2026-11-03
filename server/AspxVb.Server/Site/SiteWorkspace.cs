@@ -61,7 +61,8 @@ public sealed class SiteWorkspace
             _webReferenceDocuments[info.Id] = proxy.WsdlPath;
         }
         Workspace.AddProject(ProjectInfo.Create(_appCode, VersionStamp.Create(), "App_Code", "App_Code", LanguageNames.VisualBasic,
-            compilationOptions: Settings.Options, parseOptions: Settings.ParseOptions, documents: docs, metadataReferences: Settings.References));
+            compilationOptions: Settings.Options, parseOptions: Settings.ParseOptions, documents: docs, metadataReferences: Settings.References)
+            .WithAnalyzerConfigDocuments([EditorConfigFor(_appCode)]));
     }
 
     private DocumentInfo DocumentFor(ProjectId project, string path, string text)
@@ -70,6 +71,14 @@ public sealed class SiteWorkspace
             loader: TextLoader.From(TextAndVersion.Create(SourceText.From(text), VersionStamp.Create(), path)));
         _documents[path] = info.Id;
         return info;
+    }
+
+    /// <summary>The developer's formatting settings, as an in-memory .editorconfig at the site root (ADR 0008).</summary>
+    private DocumentInfo EditorConfigFor(ProjectId project)
+    {
+        var path = Path.Combine(Root, ".editorconfig");
+        return DocumentInfo.Create(DocumentId.CreateNewId(project, path), ".editorconfig", filePath: path,
+            loader: TextLoader.From(TextAndVersion.Create(SourceText.From(Features.Formatting.EditorConfig), VersionStamp.Create())));
     }
 
     private string Read(string path) => _overlays.TryGetValue(path, out var text) ? text : FileText.Read(path);
@@ -153,7 +162,8 @@ public sealed class SiteWorkspace
         Workspace.AddProject(ProjectInfo.Create(projectId, VersionStamp.Create(), Path.GetRelativePath(Root, markupPath),
             $"App_Web_{++_assemblyCounter}", LanguageNames.VisualBasic,
             compilationOptions: Settings.Options, parseOptions: Settings.ParseOptions,
-            documents: [codeDoc, virtualDoc], projectReferences: refs, metadataReferences: Settings.References));
+            documents: [codeDoc, virtualDoc], projectReferences: refs, metadataReferences: Settings.References)
+            .WithAnalyzerConfigDocuments([EditorConfigFor(projectId)]));
 
         var page = new PageProject
         {

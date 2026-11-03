@@ -89,6 +89,19 @@ language server compiles the code the way ASP.NET 4.x does on his server:
   - a web-service proxy: the `.wsdl`
   - framework and `Bin` symbols (`Trace`, `Session`, …): a generated read-only outline
 - **Hover** shows the signature and documentation.
+- **Pretty listing**, as in Visual Studio: pressing Enter formats the line you just
+  finished. Keywords and names get their proper casing (`end if` → `End If`, `txtname` →
+  `txtName`), spacing is normalized (`a=b` → `a = b`), and the line is indented by one
+  space per block. Comments stay exactly where you put them, and line endings stay CRLF.
+  **Format Document** / **Format Selection** do the same for more lines. The extension
+  turns on format-on-type and a one-space indent for VB files, and the same indent for
+  markup. Markup itself isn't reformatted.
+- **Automatic block ends**, as in Visual Studio: Enter after `If x Then`, `Sub …`, `For …`,
+  `Try`, `Select Case`, `With`, `Class …` and the like adds the matching `End If` /
+  `End Sub` / `Next` / `Catch … End Try` below the cursor, unless the block already has
+  one. This also works inside a block of the same kind, such as an `If` inside an `If`.
+  Enter after `Then` in a one-line `If c Then Foo()` turns it into a block: `Foo()` on its
+  own line, then `End If`. `Property` is left alone, because on its own it can be a complete auto-property.
 
 The server runs on .NET 10 or newer. You don't install it yourself: the
 [.NET Install Tool](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.vscode-dotnet-runtime)
@@ -109,6 +122,7 @@ folder in the `aspxVb.assemblyFolders` setting. The full steps are in
 ## Not yet
 
 - Signature help (parameter info while typing a call).
+- Formatting a line when you leave it with the arrow keys (only Enter triggers it).
 - IntelliSense inside `<% %>` blocks in markup.
 - `Global.asax` code-behind, `Profile` properties, and `@MasterType`.
 - VB inside `<% %>` uses VS Code's built-in VB grammar, the same one `.vb` files get.
@@ -126,4 +140,4 @@ From the repo root: `mise run ext:install-deps`, then:
   every navigation target and reports the ones that don't resolve.
 - `mise run ext:package`: builds `extension/dist/*.vsix`
 
-To install the build: `code --install-extension extension/dist/aspnet-webforms-vb-0.5.0.vsix`.
+To install the build: `code --install-extension extension/dist/aspnet-webforms-vb-0.8.2.vsix`.
