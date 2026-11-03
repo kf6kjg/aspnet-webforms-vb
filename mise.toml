@@ -1,0 +1,38 @@
+# Tool versions and project tasks. `mise install` once, then `mise run <task>`.
+# Machine-specific settings (e.g. SITES_ROOT) go in mise.local.toml, which is gitignored.
+
+[tools]
+dotnet = "10.0.403"
+node = "24"
+
+[env]
+DOTNET_CLI_TELEMETRY_OPTOUT = "1"
+DOTNET_NOLOGO = "1"
+
+[tasks.spike]
+description = "Run the Roslyn feasibility spike against samples/"
+run = "dotnet run --project spike"
+
+[tasks.scan]
+description = "Read-only inventory of the Web Site projects under $SITES_ROOT; writes .scan/report.{md,json}"
+run = "dotnet run scripts/scan-sites.cs --"
+
+[tasks."ext:install-deps"]
+description = "Install the extension's npm dev dependencies"
+dir = "extension"
+run = "npm install"
+
+[tasks."ext:test"]
+description = "Run the extension's grammar tests"
+dir = "extension"
+run = "npm test"
+
+[tasks."ext:package"]
+description = "Build the extension .vsix into extension/dist/"
+dir = "extension"
+run = "npm run package"
+
+[tasks."ext:smoke"]
+description = "Tokenize every real .aspx/.ascx/.master under $SITES_ROOT (read-only) and report grammar breakage"
+dir = "extension"
+run = "node test/smoke-real-files.mjs \"$SITES_ROOT\""
